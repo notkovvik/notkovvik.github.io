@@ -83,7 +83,7 @@ GET https://api.github.com/users/notkovvik/repos?type=owner&sort=updated&per_pag
 
 Сайт уже настроен на GitHub Pages.
 
-1. Репозиторий должен называться notkovvik.github.io — тогда сайт откроется по корневому адресу https://notkovvik.github.io/
+1. Репозиторий должен называться [ваш никнейм на гитхаб].github.io — тогда сайт откроется по корневому адресу https://notkovvik.github.io/
 2. Файл index.html лежит в корне ветки main.
 3. В Settings → Pages выбрано: Deploy from a branch → main → / (root).
 4. После коммита изменения появляются на сайте через 1–3 минуты.
