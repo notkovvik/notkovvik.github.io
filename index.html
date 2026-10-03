@@ -536,6 +536,7 @@ html.winter select{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
   gap:20px;
+  align-items:start;
 }
 .card{
   position:relative;
@@ -583,9 +584,15 @@ html.winter select{
   overflow-wrap:anywhere;
   font-weight:700;
 }
+
+/* ---------- DESCRIPTION WITH COLLAPSE ---------- */
+.description-wrap{
+  position:relative;
+  margin:0 0 16px;
+}
 .description{
   color:var(--muted);
-  margin:0 0 16px;
+  margin:0;
   overflow-wrap:anywhere;
   font-size:15px;
   line-height:1.55;
@@ -593,7 +600,41 @@ html.winter select{
   -webkit-line-clamp:3;
   -webkit-box-orient:vertical;
   overflow:hidden;
+  transition:-webkit-line-clamp .35s ease, opacity .3s ease;
 }
+.description.expanded{
+  -webkit-line-clamp:unset;
+  display:block;
+  overflow:visible;
+}
+.read-more{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  margin-top:8px;
+  padding:0;
+  border:none;
+  background:none;
+  color:var(--accent);
+  font:600 13px/1.4 system-ui;
+  cursor:pointer;
+  text-decoration:none;
+  transition:color .2s, gap .2s;
+}
+.read-more:hover{
+  text-decoration:underline;
+  gap:7px;
+}
+.read-more svg{
+  width:14px;
+  height:14px;
+  transition:transform .35s cubic-bezier(.4,0,.2,1);
+}
+.read-more[aria-expanded="true"] svg{
+  transform:rotate(180deg);
+}
+.read-more.hidden{display:none !important}
+
 .dates{
   display:flex;
   gap:12px;
@@ -1478,6 +1519,45 @@ function renderDebug(info){
   }
 }
 
+/* ---------- DESCRIPTION WITH READ MORE ---------- */
+function buildDescription(text){
+  const wrap = element('div', 'description-wrap');
+  const p = element('p', 'description', text);
+  wrap.append(p);
+
+  // Проверяем обрезку после вставки в DOM
+  requestAnimationFrame(() => {
+    const isTruncated = p.scrollHeight > p.clientHeight + 2;
+    if (!isTruncated) return;
+
+    const btn = element('button', 'read-more');
+    btn.type = 'button';
+    btn.setAttribute('aria-expanded', 'false');
+
+    const chevron = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+
+    btn.innerHTML = 'Читать далее ' + chevron;
+    wrap.append(btn);
+
+    btn.addEventListener('click', () => {
+      const expanded = p.classList.toggle('expanded');
+      btn.setAttribute('aria-expanded', String(expanded));
+      if (expanded) {
+        btn.innerHTML = 'Скрыть ' + chevron;
+      } else {
+        btn.innerHTML = 'Читать далее ' + chevron;
+        // Плавно возвращаем карточку в зону видимости
+        const card = wrap.closest('.card');
+        if (card) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }
+    });
+  });
+
+  return wrap;
+}
+
 /* ---------- RENDER ---------- */
 function render(){
   grid.replaceChildren();
@@ -1507,7 +1587,7 @@ function render(){
     card.style.animationDelay=Math.min(i*40,400)+'ms';
 
     card.append(element('h2','',r.name));
-    card.append(element('p','description',r.description||'Описание пока не добавлено.'));
+    card.append(buildDescription(r.description||'Описание пока не добавлено.'));
 
     const dates=element('div','dates');
     const created=element('span');
