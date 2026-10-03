@@ -22,6 +22,9 @@
   --radius:16px;
   --content-max:1160px;
   --content-pad:32px;
+  --glow-a:26%;
+  --glow-b:22%;
+  --glow-blur:40px;
 }
 @media(prefers-color-scheme:dark){
   :root{
@@ -38,6 +41,73 @@
     --shadow-hover:0 2px 4px rgba(0,0,0,.4),0 16px 40px -16px rgba(0,0,0,.7);
   }
 }
+
+/* ---------- HALLOWEEN THEME (3.10.2026 — 1.11.2026) ---------- */
+html.halloween{
+  color-scheme:light dark;
+  --bg:#fff8ee;
+  --surface:#fffaf2;
+  --surface-2:#fdeedd;
+  --text:#2a1a0a;
+  --muted:#7a5a3a;
+  --border:#f0ddc4;
+  --accent:#d2691e;
+  --accent-2:#6b2d8f;
+  --soft:#fde6cf;
+  --shadow:0 1px 2px rgba(60,20,0,.06),0 8px 24px -12px rgba(60,20,0,.18);
+  --shadow-hover:0 2px 4px rgba(60,20,0,.08),0 16px 40px -16px rgba(60,20,0,.26);
+  --glow-a:32%;
+  --glow-b:28%;
+}
+@media(prefers-color-scheme:dark){
+  html.halloween{
+    --bg:#130a1c;
+    --surface:#1b1026;
+    --surface-2:#241432;
+    --text:#f6ecff;
+    --muted:#b39ccb;
+    --border:#33204a;
+    --accent:#ff9a3c;
+    --accent-2:#c58bff;
+    --soft:#2a1440;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
+    --shadow-hover:0 2px 4px rgba(0,0,0,.5),0 16px 40px -16px rgba(0,0,0,.8);
+  }
+}
+
+/* ---------- WINTER THEME (1.12.2026 — 1.02.2027) ---------- */
+html.winter{
+  color-scheme:light dark;
+  --bg:#f2f8ff;
+  --surface:#ffffff;
+  --surface-2:#e6f0fb;
+  --text:#0f1b2d;
+  --muted:#5a6b82;
+  --border:#d6e4f5;
+  --accent:#1e6fd9;
+  --accent-2:#7c4dff;
+  --soft:#dceafb;
+  --shadow:0 1px 2px rgba(20,40,80,.06),0 8px 24px -12px rgba(20,40,80,.16);
+  --shadow-hover:0 2px 4px rgba(20,40,80,.08),0 16px 40px -16px rgba(20,40,80,.24);
+  --glow-a:30%;
+  --glow-b:26%;
+}
+@media(prefers-color-scheme:dark){
+  html.winter{
+    --bg:#0a1220;
+    --surface:#101a2e;
+    --surface-2:#16233c;
+    --text:#e8f1ff;
+    --muted:#9db1cc;
+    --border:#243555;
+    --accent:#7cb8ff;
+    --accent-2:#b39cff;
+    --soft:#152540;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
+    --shadow-hover:0 2px 4px rgba(0,0,0,.5),0 16px 40px -16px rgba(0,0,0,.8);
+  }
+}
+
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{
@@ -50,6 +120,7 @@ body{
   text-rendering:optimizeLegibility;
   position:relative;
   overflow-x:hidden;
+  transition:background .4s ease,color .4s ease;
 }
 
 /* ---------- FULL-SCREEN GRADIENT GLOWS ---------- */
@@ -60,7 +131,8 @@ body::after{
   border-radius:50%;
   pointer-events:none;
   z-index:0;
-  filter:blur(40px);
+  filter:blur(var(--glow-blur));
+  transition:background .4s ease;
 }
 body::before{
   top:-20vh;
@@ -70,7 +142,7 @@ body::before{
   max-width:1100px;
   max-height:1100px;
   background:radial-gradient(circle at center,
-    color-mix(in srgb, var(--accent) 26%, transparent) 0%,
+    color-mix(in srgb, var(--accent) var(--glow-a), transparent) 0%,
     color-mix(in srgb, var(--accent) 10%, transparent) 40%,
     transparent 70%);
   animation:floatA 18s ease-in-out infinite;
@@ -83,7 +155,7 @@ body::after{
   max-width:1000px;
   max-height:1000px;
   background:radial-gradient(circle at center,
-    color-mix(in srgb, var(--accent-2) 22%, transparent) 0%,
+    color-mix(in srgb, var(--accent-2) var(--glow-b), transparent) 0%,
     color-mix(in srgb, var(--accent-2) 8%, transparent) 40%,
     transparent 70%);
   animation:floatB 22s ease-in-out infinite;
@@ -95,6 +167,70 @@ body::after{
 @keyframes floatB{
   0%,100%{transform:translate(0,0) scale(1)}
   50%{transform:translate(3vw,-3vh) scale(1.12)}
+}
+
+/* ---------- HALLOWEEN DECOR ---------- */
+.halloween-decor{
+  display:none;
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+}
+html.halloween .halloween-decor{display:block}
+.halloween-decor .bat{
+  position:absolute;
+  width:64px;
+  height:32px;
+  opacity:.55;
+  color:var(--accent-2);
+  animation:batFly 26s linear infinite;
+}
+.halloween-decor .bat.b1{top:12%;left:-10%;animation-duration:26s}
+.halloween-decor .bat.b2{top:28%;left:-10%;animation-duration:34s;animation-delay:4s;width:44px;height:22px;opacity:.4}
+.halloween-decor .bat.b3{top:64%;left:-10%;animation-duration:30s;animation-delay:9s;width:52px;height:26px;opacity:.45}
+@keyframes batFly{
+  0%{transform:translateX(0) translateY(0)}
+  25%{transform:translateX(30vw) translateY(-4vh)}
+  50%{transform:translateX(60vw) translateY(2vh)}
+  75%{transform:translateX(90vw) translateY(-3vh)}
+  100%{transform:translateX(120vw) translateY(0)}
+}
+.halloween-decor .web{
+  position:absolute;
+  width:160px;
+  height:160px;
+  color:var(--accent-2);
+  opacity:.18;
+}
+.halloween-decor .web.tl{top:0;left:0}
+.halloween-decor .web.tr{top:0;right:0;transform:scaleX(-1)}
+
+/* ---------- WINTER DECOR ---------- */
+.winter-decor{
+  display:none;
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+  overflow:hidden;
+}
+html.winter .winter-decor{display:block}
+.winter-decor .snow{
+  position:absolute;
+  top:-10vh;
+  color:#ffffff;
+  opacity:.85;
+  user-select:none;
+  animation:snowFall linear infinite;
+  text-shadow:0 0 6px rgba(255,255,255,.7);
+}
+@keyframes snowFall{
+  0%{transform:translateY(-10vh) translateX(0) rotate(0deg)}
+  25%{transform:translateY(25vh) translateX(2vw) rotate(90deg)}
+  50%{transform:translateY(50vh) translateX(-1vw) rotate(180deg)}
+  75%{transform:translateY(75vh) translateX(2vw) rotate(270deg)}
+  100%{transform:translateY(110vh) translateX(0) rotate(360deg)}
 }
 
 a{color:var(--accent);text-decoration:none}
@@ -115,6 +251,7 @@ header{
   background:color-mix(in srgb, var(--bg) 82%, transparent);
   backdrop-filter:saturate(180%) blur(14px);
   -webkit-backdrop-filter:saturate(180%) blur(14px);
+  transition:background .4s ease,border-color .4s ease;
 }
 .top{
   max-width:var(--content-max);
@@ -137,6 +274,32 @@ header{
 .brand span{font-weight:600;color:var(--muted);margin-left:.35em}
 .nav-actions{display:flex;align-items:center;gap:8px}
 .top a{display:inline-flex;align-items:center}
+
+/* ---------- SEASONAL TOGGLE BUTTON ---------- */
+.season-toggle{
+  display:none;
+  align-items:center;
+  gap:6px;
+  min-height:44px;
+  padding:9px 14px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--bg);
+  font:600 14px/1.4 system-ui;
+  color:var(--text);
+  cursor:pointer;
+  white-space:nowrap;
+  transition:border-color .2s, background .2s, color .2s, transform .15s, box-shadow .2s;
+}
+html.season-active .season-toggle{display:inline-flex}
+.season-toggle:hover{
+  border-color:var(--accent);
+  color:var(--accent);
+  transform:translateY(-1px);
+  box-shadow:0 4px 12px -4px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.season-toggle:active{transform:translateY(0) scale(.98)}
+.season-toggle .season-icon{font-size:15px;line-height:1}
 
 /* ---------- MAIN / FOOTER CONTAINERS ---------- */
 main,footer{
@@ -183,6 +346,7 @@ footer a{font-weight:550}
   background:var(--soft);
   border-radius:999px;
   margin-bottom:20px;
+  transition:background .4s ease,color .4s ease;
 }
 .eyebrow::before{
   content:"";
@@ -190,6 +354,28 @@ footer a{font-weight:550}
   border-radius:50%;
   background:currentColor;
   animation:pulse 2s ease-in-out infinite;
+}
+html.halloween .eyebrow::before{
+  content:"🎃";
+  width:auto;height:auto;
+  background:transparent;
+  font-size:14px;
+  animation:pumpkinPulse 2.4s ease-in-out infinite;
+}
+html.winter .eyebrow::before{
+  content:"❄";
+  width:auto;height:auto;
+  background:transparent;
+  font-size:14px;
+  animation:snowPulse 3s ease-in-out infinite;
+}
+@keyframes pumpkinPulse{
+  0%,100%{transform:scale(1) rotate(0deg)}
+  50%{transform:scale(1.15) rotate(-6deg)}
+}
+@keyframes snowPulse{
+  0%,100%{transform:scale(1) rotate(0deg);opacity:.8}
+  50%{transform:scale(1.2) rotate(180deg);opacity:1}
 }
 @keyframes pulse{
   0%,100%{opacity:1;transform:scale(1)}
@@ -208,6 +394,9 @@ h1 span{
   background-clip:text;
   color:transparent;
 }
+h1 .season-emoji{display:none;margin-left:.15em;font-size:.9em;vertical-align:baseline}
+html.halloween h1 .season-emoji.halloween-emoji{display:inline}
+html.winter h1 .season-emoji.winter-emoji{display:inline}
 .intro{
   font-size:19px;
   color:var(--muted);
@@ -230,7 +419,7 @@ h1 span{
   border-radius:14px;
   min-width:120px;
   box-shadow:var(--shadow);
-  transition:transform .2s, box-shadow .2s;
+  transition:transform .2s, box-shadow .2s,background .4s ease,border-color .4s ease;
 }
 .stat:hover{transform:translateY(-2px);box-shadow:var(--shadow-hover)}
 .stat-value{
@@ -278,7 +467,7 @@ input,select{
   background:var(--surface);
   color:var(--text);
   font:inherit;
-  transition:border-color .2s, box-shadow .2s, background .2s;
+  transition:border-color .2s, box-shadow .2s, background .4s ease,color .4s ease;
 }
 .search input{padding-left:44px}
 input:hover,select:hover{border-color:color-mix(in srgb, var(--accent) 40%, var(--border))}
@@ -300,6 +489,20 @@ select{
 @media(prefers-color-scheme:dark){
   select{
     background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8a5a0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+}
+html.halloween select{
+  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d2691e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+html.winter select{
+  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231e6fd9' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+@media(prefers-color-scheme:dark){
+  html.halloween select{
+    background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff9a3c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+  html.winter select{
+    background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237cb8ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   }
 }
 .sort-label{
@@ -336,7 +539,7 @@ select{
   min-width:0;
   background:var(--surface);
   box-shadow:var(--shadow);
-  transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+  transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease,background .4s ease;
   overflow:hidden;
   animation:fadeUp .45s ease backwards;
 }
@@ -502,6 +705,8 @@ select{
   content:"🏷";
   font-size:14px;
 }
+html.halloween .release-area > div:first-child::before{content:"🍬"}
+html.winter .release-area > div:first-child::before{content:"🎁"}
 
 /* ---------- NOTICE ---------- */
 .notice{
@@ -710,19 +915,51 @@ select{
   .stat-value{font-size:19px}
   .nav-actions{gap:4px}
   .brand span{display:none}
+  .season-toggle{padding:9px 10px;font-size:13px}
 }
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
   .card:hover{transform:none}
   body::before,body::after{animation:none}
+  .halloween-decor .bat{display:none}
+  .winter-decor .snow{animation:none;top:auto;bottom:0;opacity:.4}
 }
 </style>
 </head>
 <body>
+
+<!-- Хэллоуинский декор -->
+<div class="halloween-decor" aria-hidden="true">
+  <svg class="web tl" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="1">
+    <path d="M0 0 L100 100 M0 0 L70 100 M0 0 L100 70 M0 0 L40 100 M0 0 L100 40 M0 0 L20 100 M0 0 L100 20"/>
+    <path d="M0 20 Q30 30 40 60 M0 40 Q30 40 20 80 M0 60 Q20 50 10 90"/>
+  </svg>
+  <svg class="web tr" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="1">
+    <path d="M0 0 L100 100 M0 0 L70 100 M0 0 L100 70 M0 0 L40 100 M0 0 L100 40 M0 0 L20 100 M0 0 L100 20"/>
+    <path d="M0 20 Q30 30 40 60 M0 40 Q30 40 20 80 M0 60 Q20 50 10 90"/>
+  </svg>
+  <svg class="bat b1" viewBox="0 0 64 32" fill="currentColor" aria-hidden="true">
+    <path d="M32 8c-4 0-8 2-12 6-4-6-10-8-16-8 2 3 4 7 4 12-2 0-6-1-8-4 2 6 8 12 16 14 4 1 8 0 12-2 2-1 2-1 4-1s2 0 4 1c4 2 8 3 12 2 8-2 14-8 16-14-2 3-6 4-8 4 0-5 2-9 4-12-6 0-12 2-16 8-4-4-8-6-12-6z"/>
+  </svg>
+  <svg class="bat b2" viewBox="0 0 64 32" fill="currentColor" aria-hidden="true">
+    <path d="M32 8c-4 0-8 2-12 6-4-6-10-8-16-8 2 3 4 7 4 12-2 0-6-1-8-4 2 6 8 12 16 14 4 1 8 0 12-2 2-1 2-1 4-1s2 0 4 1c4 2 8 3 12 2 8-2 14-8 16-14-2 3-6 4-8 4 0-5 2-9 4-12-6 0-12 2-16 8-4-4-8-6-12-6z"/>
+  </svg>
+  <svg class="bat b3" viewBox="0 0 64 32" fill="currentColor" aria-hidden="true">
+    <path d="M32 8c-4 0-8 2-12 6-4-6-10-8-16-8 2 3 4 7 4 12-2 0-6-1-8-4 2 6 8 12 16 14 4 1 8 0 12-2 2-1 2-1 4-1s2 0 4 1c4 2 8 3 12 2 8-2 14-8 16-14-2 3-6 4-8 4 0-5 2-9 4-12-6 0-12 2-16 8-4-4-8-6-12-6z"/>
+  </svg>
+</div>
+
+<!-- Зимний декор (снежинки) -->
+<div class="winter-decor" id="winter-decor" aria-hidden="true"></div>
+
 <header>
   <nav class="top" aria-label="Главная навигация">
     <a class="brand" href="./"><strong>notkovvik</strong><span>projects</span></a>
     <div class="nav-actions">
+      <button class="season-toggle" id="season-toggle" type="button" aria-label="Вернуть обычный вид">
+        <span class="season-icon" id="season-toggle-icon">🚫</span>
+        <span id="season-toggle-text">Обычный вид</span>
+      </button>
       <a class="button" href="https://github.com/notkovvik" target="_blank" rel="noopener noreferrer">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.9 1.2 1.9 1.2 1.1 1.9 2.9 1.3 3.6 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.7-2.8 5.7-5.5 6 .4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3"></path></svg>
         GitHub ↗
@@ -733,7 +970,7 @@ select{
 <main>
   <section class="hero">
     <div class="eyebrow">Открытые проекты</div>
-    <h1>Проекты от <span>notkovvik</span></h1>
+    <h1>Проекты от <span>notkovvik</span><span class="season-emoji halloween-emoji" aria-hidden="true">🎃</span><span class="season-emoji winter-emoji" aria-hidden="true">❄</span></h1>
     <p class="intro">Откройте сайт проекта, загляните в код или скачайте исходники и файлы релизов — всё собрано на одной странице.</p>
     <div class="stats" id="stats" aria-live="polite">
       <div class="stat">
@@ -809,7 +1046,90 @@ const CACHE_TTL_MS = 10 * 60 * 1000;
 const CACHE_PREFIX = 'gh-cache:';
 const TOKEN_KEY = 'gh-token';
 const SORT_KEY = 'gh-sort';
+const SEASON_KEY = 'gh-season';
 
+/* ---------- SEASON WINDOWS ---------- */
+const HALLOWEEN_START = new Date('2026-10-03T00:00:00');
+const HALLOWEEN_END   = new Date('2026-11-01T23:59:59');
+const WINTER_START    = new Date('2026-12-01T00:00:00');
+const WINTER_END      = new Date('2027-02-01T23:59:59');
+
+function inRange(now, start, end){ return now >= start && now <= end; }
+function currentSeason(now = new Date()){
+  if(inRange(now, HALLOWEEN_START, HALLOWEEN_END)) return 'halloween';
+  if(inRange(now, WINTER_START, WINTER_END)) return 'winter';
+  return null;
+}
+function seasonUserPref(){
+  try{ return localStorage.getItem(SEASON_KEY); }
+  catch{ return null; }
+}
+function setSeasonUserPref(value){
+  try{
+    if(value===null) localStorage.removeItem(SEASON_KEY);
+    else localStorage.setItem(SEASON_KEY, value);
+  }catch{}
+}
+function isSeasonOn(){
+  if(!currentSeason()) return false;
+  const pref=seasonUserPref();
+  if(pref==='0') return false;
+  return true; // по умолчанию — включена
+}
+function applySeasonTheme(){
+  const html=document.documentElement;
+  const season=currentSeason();
+  const active=!!season;
+  const on=active && isSeasonOn();
+  html.classList.toggle('season-active', active);
+  html.classList.toggle('halloween', on && season==='halloween');
+  html.classList.toggle('winter', on && season==='winter');
+  updateSeasonButton();
+}
+function updateSeasonButton(){
+  const btn=document.querySelector('#season-toggle');
+  if(!btn) return;
+  const season=currentSeason();
+  const on=isSeasonOn() && !!season;
+  const icon=document.querySelector('#season-toggle-icon');
+  const text=document.querySelector('#season-toggle-text');
+  if(!season){
+    btn.style.display='none';
+    return;
+  }
+  btn.style.display='';
+  if(on){
+    icon.textContent='🚫';
+    text.textContent='Обычный вид';
+    btn.setAttribute('aria-label','Вернуть обычный вид');
+  }else{
+    if(season==='halloween'){ icon.textContent='🎃'; text.textContent='Хэллоуин'; }
+    else { icon.textContent='❄'; text.textContent='Зима'; }
+    btn.setAttribute('aria-label','Включить сезонную тему');
+  }
+}
+
+/* ---------- SNOWFLAKES ---------- */
+function buildSnow(){
+  const box=document.querySelector('#winter-decor');
+  if(!box || box.dataset.built==='1') return;
+  const flakes=['❄','❅','❆','•','*'];
+  const N=28;
+  for(let i=0;i<N;i++){
+    const s=document.createElement('span');
+    s.className='snow';
+    s.textContent=flakes[i % flakes.length];
+    s.style.left=(Math.random()*100).toFixed(2)+'vw';
+    s.style.fontSize=(10+Math.random()*14).toFixed(1)+'px';
+    s.style.animationDuration=(9+Math.random()*10).toFixed(1)+'s';
+    s.style.animationDelay=(-Math.random()*12).toFixed(1)+'s';
+    s.style.opacity=(0.35+Math.random()*0.5).toFixed(2);
+    box.append(s);
+  }
+  box.dataset.built='1';
+}
+
+/* ---------- TOKEN ---------- */
 function getToken(){
   try{ return localStorage.getItem(TOKEN_KEY) || ''; }
   catch{ return ''; }
@@ -826,6 +1146,8 @@ function authHeaders(){
   if(t) h.Authorization='Bearer '+t;
   return h;
 }
+
+/* ---------- CACHE ---------- */
 function cacheGet(key){
   try{
     const raw=localStorage.getItem(CACHE_PREFIX+key);
@@ -900,7 +1222,7 @@ function formatDate(iso){
   }catch{return '—';}
 }
 
-/* ---------- API with cache ---------- */
+/* ---------- API ---------- */
 async function api(path,{useCache=true}={}){
   if(useCache){
     const cached=cacheGet(path);
@@ -1075,6 +1397,8 @@ function renderDebug(info){
   row2('Страниц запрошено', info.pages);
   row2('Запросов осталось (лимит)', info.remaining!==null && info.limit!==null ? (info.remaining+' / '+info.limit) : 'неизвестно');
   row2('Токен', getToken()?'используется':'нет');
+  row2('Сезон', currentSeason() || '—');
+  row2('Сезонная тема', document.documentElement.classList.contains('halloween') ? 'хэллоуин' : document.documentElement.classList.contains('winter') ? 'зима' : 'нет');
 
   if(info.missing && info.missing.length){
     const miss=element('div','debug-row');
@@ -1104,6 +1428,23 @@ function renderDebug(info){
   };
   cacheRow.append(cacheBtn);
   rows.push(cacheRow);
+
+  if(currentSeason()){
+    const hRow=element('div','debug-row');
+    hRow.append(element('span','','Настройка сезонной темы'));
+    const hBtn=element('button','button','Сбросить выбор');
+    hBtn.type='button';
+    hBtn.style.minHeight='34px';
+    hBtn.style.padding='4px 12px';
+    hBtn.onclick=()=>{
+      setSeasonUserPref(null);
+      applySeasonTheme();
+      hBtn.textContent='Сброшено';
+      setTimeout(()=>{hBtn.textContent='Сбросить выбор';},1500);
+    };
+    hRow.append(hBtn);
+    rows.push(hRow);
+  }
 
   rows.forEach(r=>debugBody.append(r));
 
@@ -1150,7 +1491,6 @@ function render(){
     card.append(element('h2','',r.name));
     card.append(element('p','description',r.description||'Описание пока не добавлено.'));
 
-    // Даты
     const dates=element('div','dates');
     const created=element('span');
     created.append(
@@ -1301,6 +1641,22 @@ async function load(){
   }
 }
 
+/* ---------- INIT ---------- */
+function initSeason(){
+  applySeasonTheme();
+  buildSnow();
+  const btn=document.querySelector('#season-toggle');
+  if(btn){
+    btn.addEventListener('click',()=>{
+      const season=currentSeason();
+      if(!season) return;
+      const on=isSeasonOn();
+      setSeasonUserPref(on?'0':'1');
+      applySeasonTheme();
+    });
+  }
+}
+
 /* ---------- EVENTS ---------- */
 search.addEventListener('input',render);
 sortSelect.addEventListener('change',()=>{
@@ -1308,7 +1664,6 @@ sortSelect.addEventListener('change',()=>{
   render();
 });
 
-// Восстанавливаем сохранённую сортировку
 try{
   const saved=localStorage.getItem(SORT_KEY);
   if(saved && ['updated','created','name-asc','name-desc'].includes(saved)){
@@ -1316,7 +1671,11 @@ try{
   }
 }catch{}
 
-load();
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',()=>{ initSeason(); load(); });
+}else{
+  initSeason(); load();
+}
 </script>
 </body>
 </html>
