@@ -1,0 +1,2048 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>notkovvik — рабочий стол</title>
+<style>
+:root{
+  color-scheme:dark;
+  --win-bg:#1b2733;
+  --win-border:#3a4a5c;
+  --win-text:#eef1f4;
+  --win-muted:#9fb0c1;
+  --win-accent:#4a9eff;
+  --desk-1:#0b1a2b;
+  --desk-2:#0f2740;
+  --desk-3:#1a2340;
+  --taskbar:rgba(16,24,34,.86);
+  --font:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{
+  margin:0;height:100%;overflow:hidden;
+  font:14px/1.45 var(--font);color:var(--win-text);background:#0b1a2b;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:var(--win-accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ============ LOCK SCREEN ============ */
+html.locked,html.locked body{overflow:hidden;height:100%}
+#lock-screen{
+  position:fixed;inset:0;z-index:9999;
+  display:flex;align-items:center;justify-content:center;padding:24px;
+  background:
+    radial-gradient(1200px 800px at 20% 10%, rgba(80,140,220,.35), transparent 60%),
+    radial-gradient(900px 700px at 90% 90%, rgba(140,90,220,.35), transparent 60%),
+    linear-gradient(135deg,#0b1a2b 0%,#0f2740 45%,#1a2340 100%);
+  color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  opacity:1;transition:opacity .6s ease, visibility .6s ease;
+}
+#lock-screen.fade-out{opacity:0;visibility:hidden}
+#lock-screen::after{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(circle at 70% 30%, rgba(255,255,255,.06), transparent 45%);
+  pointer-events:none;
+}
+#page-shell{transition:filter .6s ease, opacity .6s ease, transform .6s ease}
+html.locked #page-shell{
+  filter:blur(14px) brightness(.55) saturate(.7);
+  pointer-events:none;user-select:none;transform:scale(1.01);
+}
+.lock-card{
+  position:relative;z-index:1;width:100%;max-width:420px;
+  padding:36px 32px 30px;border-radius:22px;
+  background:rgba(20,28,44,.62);
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:
+    0 30px 80px -20px rgba(0,0,0,.7),
+    0 0 0 1px rgba(255,255,255,.04) inset,
+    0 1px 0 rgba(255,255,255,.08) inset;
+  backdrop-filter:blur(22px) saturate(160%);
+  -webkit-backdrop-filter:blur(22px) saturate(160%);
+  animation:lockIn .5s cubic-bezier(.2,.7,.2,1);
+}
+@keyframes lockIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+.lock-avatar{
+  width:76px;height:76px;margin:0 auto 18px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#5aa2ff,#8b6cff);
+  box-shadow:0 12px 30px -10px rgba(90,162,255,.8);
+}
+.lock-avatar svg{width:40px;height:40px;color:#fff}
+.lock-title{text-align:center;font-size:22px;font-weight:700;margin:0 0 4px;letter-spacing:-.01em}
+.lock-sub{text-align:center;font-size:14px;color:rgba(255,255,255,.68);margin:0 0 24px}
+.lock-field{margin-bottom:16px}
+.lock-field label{display:block;font-size:13px;font-weight:600;color:rgba(255,255,255,.8);margin-bottom:8px;letter-spacing:.02em}
+.lock-input-wrap{position:relative;display:flex;align-items:center}
+.lock-input-wrap svg{position:absolute;left:16px;width:18px;height:18px;color:rgba(255,255,255,.6);pointer-events:none}
+.lock-field input{
+  width:100%;min-height:52px;padding:14px 16px 14px 46px;
+  border-radius:14px;border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.07);color:#fff;font:16px/1.4 system-ui;
+  transition:border-color .2s, background .2s, box-shadow .2s;
+}
+.lock-field input::placeholder{color:rgba(255,255,255,.45)}
+.lock-field input:hover{border-color:rgba(255,255,255,.32);background:rgba(255,255,255,.09)}
+.lock-field input:focus{outline:none;border-color:#5aa2ff;background:rgba(255,255,255,.1);box-shadow:0 0 0 4px rgba(90,162,255,.25)}
+.lock-field.invalid input{border-color:#ff5a5a;background:rgba(255,90,90,.08);box-shadow:0 0 0 4px rgba(255,90,90,.18)}
+.lock-field.invalid input:focus{border-color:#ff5a5a;box-shadow:0 0 0 4px rgba(255,90,90,.28)}
+.lock-error{min-height:20px;margin:2px 0 14px;font-size:13px;color:#ff8a8a;opacity:0;transform:translateY(-4px);transition:opacity .2s, transform .2s}
+.lock-error.show{opacity:1;transform:translateY(0)}
+.lock-btn{
+  width:100%;min-height:52px;border-radius:14px;border:1px solid transparent;
+  background:linear-gradient(135deg,#3f8cff,#7a5cff);color:#fff;
+  font:700 16px/1.2 system-ui;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  transition:transform .15s, box-shadow .2s, filter .2s;
+  box-shadow:0 14px 30px -12px rgba(63,140,255,.8);
+}
+.lock-btn:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 18px 36px -12px rgba(63,140,255,.9)}
+.lock-btn:active{transform:translateY(0) scale(.99)}
+.lock-btn:disabled{cursor:default;filter:saturate(.6) brightness(.9);transform:none;box-shadow:none}
+.lock-hint{text-align:center;font-size:12px;color:rgba(255,255,255,.45);margin-top:18px}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+.lock-card.shake{animation:shake .45s ease}
+
+.welcome{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:26px;padding:24px;
+  opacity:0;visibility:hidden;transition:opacity .45s ease, visibility .45s ease;
+}
+.welcome.show{opacity:1;visibility:visible}
+.welcome-inner{display:flex;align-items:center;gap:26px;padding:8px}
+.welcome-avatar{
+  width:110px;height:110px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#5aa2ff,#8b6cff);
+  box-shadow:0 20px 50px -18px rgba(90,162,255,.9),0 0 0 4px rgba(255,255,255,.08);
+  animation:welcomePop .6s cubic-bezier(.2,.7,.2,1);
+}
+@keyframes welcomePop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+.welcome-avatar svg{width:60px;height:60px;color:#fff}
+.welcome-text{display:flex;flex-direction:column;gap:6px;text-align:left}
+.welcome-hello{font-size:15px;color:rgba(255,255,255,.7);letter-spacing:.04em;text-transform:uppercase}
+.welcome-name{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.welcome-status{display:inline-flex;align-items:center;gap:10px;font-size:15px;color:rgba(255,255,255,.8);margin-top:4px}
+.dots{display:inline-flex;align-items:center;gap:6px}
+.dots i{width:8px;height:8px;border-radius:50%;background:#fff;display:inline-block;opacity:.25;animation:dotPulse 1.2s ease-in-out infinite}
+.dots i:nth-child(2){animation-delay:.15s}
+.dots i:nth-child(3){animation-delay:.3s}
+.dots i:nth-child(4){animation-delay:.45s}
+.dots i:nth-child(5){animation-delay:.6s}
+@keyframes dotPulse{0%,80%,100%{opacity:.25;transform:scale(.85)}40%{opacity:1;transform:scale(1.1)}}
+.welcome-progress{width:min(320px, 80vw);height:3px;border-radius:999px;background:rgba(255,255,255,.15);overflow:hidden}
+.welcome-progress span{display:block;height:100%;width:40%;border-radius:inherit;background:linear-gradient(90deg,#5aa2ff,#8b6cff);animation:progressRun 8s linear forwards}
+@keyframes progressRun{from{width:0%}to{width:100%}}
+
+@media(max-width:520px){
+  .lock-card{padding:30px 22px 24px;border-radius:18px}
+  .lock-avatar{width:64px;height:64px;margin-bottom:14px}
+  .lock-avatar svg{width:34px;height:34px}
+  .welcome-inner{gap:16px}
+  .welcome-avatar{width:84px;height:84px}
+  .welcome-avatar svg{width:44px;height:44px}
+  .welcome-name{font-size:24px}
+}
+
+/* ============ DESKTOP ============ */
+#desktop{
+  position:fixed;inset:0;z-index:1;
+  background:
+    radial-gradient(1200px 800px at 18% 8%, rgba(80,140,220,.28), transparent 60%),
+    radial-gradient(900px 700px at 88% 92%, rgba(140,90,220,.26), transparent 60%),
+    linear-gradient(135deg,var(--desk-1) 0%,var(--desk-2) 45%,var(--desk-3) 100%);
+  overflow:hidden;user-select:none;
+}
+.desk-icons{
+  position:absolute;top:16px;left:16px;
+  display:grid;grid-template-columns:repeat(auto-fill, 96px);
+  gap:8px;padding:8px;z-index:1;
+}
+.desk-icon{
+  width:96px;padding:10px 6px 8px;border-radius:4px;
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  text-align:center;color:#fff;cursor:default;
+  border:1px solid transparent;
+  transition:background .12s, border-color .12s;
+}
+.desk-icon:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.12)}
+.desk-icon.selected{background:rgba(74,158,255,.28);border-color:rgba(74,158,255,.6)}
+.desk-icon .ico{
+  width:40px;height:40px;display:flex;align-items:center;justify-content:center;
+  border-radius:8px;background:rgba(255,255,255,.12);
+  box-shadow:0 2px 8px rgba(0,0,0,.25);color:#fff;flex-shrink:0;
+}
+.desk-icon .ico svg{width:24px;height:24px}
+.desk-icon .ico.blue{background:#3a6fd8}
+.desk-icon .ico.gray{background:#4a5b6e}
+.desk-icon .ico.telegram{background:#229ED9}
+.desk-icon .ico.github{background:#24292f}
+.desk-icon .ico.orange{background:#d88a3a}
+.desk-icon .ico.green{background:#2ea44f}
+.desk-icon .ico.red{background:#c0392b}
+.desk-icon .ico.pink{background:#c13584}
+.desk-icon .lbl{
+  font-size:12.5px;line-height:1.25;color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,.7);word-break:break-word;
+}
+
+/* ============ TASKBAR ============ */
+#taskbar{
+  position:fixed;left:0;right:0;bottom:0;height:48px;z-index:9000;
+  display:flex;align-items:center;gap:6px;padding:0 8px;
+  background:var(--taskbar);
+  border-top:1px solid rgba(255,255,255,.08);
+  backdrop-filter:blur(14px) saturate(160%);
+  -webkit-backdrop-filter:blur(14px) saturate(160%);
+}
+.tb-btn{
+  height:38px;min-width:44px;padding:0 12px;border-radius:6px;
+  border:1px solid transparent;background:transparent;color:#dfe7ee;
+  display:inline-flex;align-items:center;gap:8px;font-size:13px;
+  transition:background .12s, border-color .12s;
+}
+.tb-btn:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.1)}
+.tb-btn svg{width:18px;height:18px}
+.tb-sep{width:1px;height:24px;background:rgba(255,255,255,.12);margin:0 4px}
+.tb-spacer{flex:1}
+.tb-clock{display:flex;flex-direction:column;align-items:flex-end;font-size:12px;line-height:1.2;color:#dfe7ee;padding:0 10px}
+.tb-clock strong{font-weight:600;font-size:13px}
+.tb-clock span{color:#9fb0c1}
+.tb-user{
+  display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 10px;
+  border-radius:6px;border:1px solid transparent;background:transparent;color:#dfe7ee;
+}
+.tb-user:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.1)}
+.tb-user .ava{width:24px;height:24px;border-radius:50%;background:#3a4a5c;display:flex;align-items:center;justify-content:center}
+.tb-user .ava svg{width:16px;height:16px;color:#c9d6e2}
+
+/* ============ START MENU ============ */
+#start-menu{
+  position:fixed;left:8px;bottom:56px;width:420px;max-width:calc(100vw - 16px);
+  z-index:9500;background:#1b2733;border:1px solid #3a4a5c;border-radius:8px;
+  box-shadow:0 24px 60px -20px rgba(0,0,0,.8);padding:16px;
+  opacity:0;visibility:hidden;transform:translateY(8px);
+  transition:opacity .15s, transform .15s, visibility .15s;
+}
+#start-menu.open{opacity:1;visibility:visible;transform:translateY(0)}
+#start-menu h3{margin:0 0 12px;font-size:13px;font-weight:600;color:#9fb0c1;text-transform:uppercase;letter-spacing:.06em}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{
+  display:flex;flex-direction:column;align-items:flex-start;gap:8px;
+  padding:12px;border-radius:6px;border:1px solid #3a4a5c;
+  background:#243342;color:#dfe7ee;text-align:left;
+  transition:border-color .12s, background .12s;
+}
+.tile:hover{border-color:#4a9eff;background:#2a3a4c}
+.tile .tico{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;background:#3a6fd8;color:#fff}
+.tile .tico svg{width:18px;height:18px}
+.tile .tico.github{background:#24292f}
+.tile .tico.telegram{background:#229ED9}
+.tile .tico.gray{background:#4a5b6e}
+.tile .tico.orange{background:#d88a3a}
+.tile .tico.green{background:#2ea44f}
+.tile .tico.red{background:#c0392b}
+.tile .tico.pink{background:#c13584}
+.tile span{font-size:13px;line-height:1.2}
+
+/* ============ CONTEXT MENU ============ */
+#context-menu{
+  position:fixed;z-index:9800;min-width:200px;
+  background:#1b2733;border:1px solid #3a4a5c;border-radius:6px;
+  box-shadow:0 20px 40px -16px rgba(0,0,0,.8);padding:6px;
+  opacity:0;visibility:hidden;transition:opacity .1s, visibility .1s;
+}
+#context-menu.open{opacity:1;visibility:visible}
+#context-menu button{display:block;width:100%;padding:8px 10px;text-align:left;border-radius:4px;border:none;background:transparent;color:#dfe7ee;font-size:13px}
+#context-menu button:hover{background:rgba(74,158,255,.18)}
+#context-menu hr{border:none;border-top:1px solid #3a4a5c;margin:4px 0}
+
+#toast{
+  position:fixed;right:16px;bottom:64px;z-index:9900;
+  background:#243342;border:1px solid #3a4a5c;border-radius:6px;
+  padding:10px 14px;color:#dfe7ee;font-size:13px;
+  opacity:0;visibility:hidden;transform:translateY(6px);
+  transition:opacity .2s, transform .2s, visibility .2s;
+}
+#toast.show{opacity:1;visibility:visible;transform:translateY(0)}
+
+/* =========================================================
+   ОКНА
+   ========================================================= */
+.window{
+  position:absolute;
+  top:80px;left:120px;
+  width:min(1100px, calc(100vw - 160px));
+  height:min(720px, calc(100vh - 160px));
+  min-width:360px;min-height:260px;
+  display:flex;flex-direction:column;
+  background:#141c26;
+  border:1px solid var(--win-border);
+  border-radius:8px;
+  box-shadow:0 24px 60px -20px rgba(0,0,0,.8), 0 0 0 1px rgba(0,0,0,.4);
+  overflow:hidden;z-index:10;
+  opacity:0;transform:scale(.98);
+  transition:opacity .18s ease, transform .18s ease;
+}
+.window.show{opacity:1;transform:scale(1)}
+.window.minimized{display:none}
+.window.maximized{
+  top:0 !important;left:0 !important;
+  width:100vw !important;height:calc(100vh - 48px) !important;
+  border-radius:0;z-index:12;
+}
+.window.active{box-shadow:0 28px 70px -20px rgba(0,0,0,.85), 0 0 0 1px rgba(74,158,255,.35)}
+
+.win-title{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 8px 8px 12px;
+  background:#1f2a37;border-bottom:1px solid var(--win-border);
+  flex-shrink:0;cursor:grab;min-height:40px;user-select:none;
+}
+.win-title:active{cursor:grabbing}
+.win-title .win-ico{
+  width:20px;height:20px;display:flex;align-items:center;justify-content:center;
+  border-radius:4px;background:#3a6fd8;color:#fff;flex-shrink:0;
+}
+.win-title .win-ico svg{width:14px;height:14px}
+.win-title .win-name{
+  font-size:13px;font-weight:600;color:#dfe7ee;flex:1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.win-controls{display:flex;gap:2px}
+.win-ctrl{
+  width:34px;height:28px;border-radius:4px;border:none;background:transparent;color:#c9d6e2;
+  display:flex;align-items:center;justify-content:center;transition:background .12s;
+}
+.win-ctrl:hover{background:rgba(255,255,255,.1)}
+.win-ctrl.close:hover{background:#e81123;color:#fff}
+.win-ctrl svg{width:12px;height:12px}
+
+.win-body{
+  flex:1;overflow:auto;background:#0f1620;color:#dfe7ee;position:relative;
+  scrollbar-width:thin;scrollbar-color:#3a4a5c transparent;
+}
+.win-body::-webkit-scrollbar{width:10px;height:10px}
+.win-body::-webkit-scrollbar-thumb{background:#3a4a5c;border-radius:6px}
+
+.win-resize{position:absolute;z-index:11}
+.win-resize.e{top:0;right:0;width:6px;height:100%;cursor:ew-resize}
+.win-resize.s{bottom:0;left:0;height:6px;width:100%;cursor:ns-resize}
+.win-resize.se{bottom:0;right:0;width:14px;height:14px;cursor:nwse-resize}
+
+/* =========================================================
+   BROWSER
+   ========================================================= */
+.browser{
+  display:flex;flex-direction:column;height:100%;
+  background:#202124;
+}
+.browser-tabs{
+  display:flex;align-items:center;gap:2px;
+  padding:6px 6px 0;
+  background:#202124;
+  border-bottom:1px solid #35363a;
+  overflow-x:auto;scrollbar-width:none;
+}
+.browser-tabs::-webkit-scrollbar{display:none}
+.b-tab{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;min-width:160px;max-width:220px;
+  background:#35363a;border-radius:8px 8px 0 0;
+  font-size:12.5px;color:#e8eaed;cursor:pointer;
+  border:1px solid transparent;border-bottom:none;
+  position:relative;flex-shrink:0;
+}
+.b-tab:hover{background:#3c4043}
+.b-tab.active{background:#292a2d;border-color:#4a4d52}
+.b-tab .b-fav{width:14px;height:14px;border-radius:3px;background:#5b5f66;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:9px;font-weight:700}
+.b-tab .b-ttl{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.b-tab .b-close{
+  width:16px;height:16px;border-radius:50%;border:none;background:transparent;color:#e8eaed;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.b-tab .b-close:hover{background:rgba(255,255,255,.18)}
+.b-tab .b-close svg{width:10px;height:10px}
+.b-newtab{
+  width:26px;height:26px;border-radius:50%;border:none;background:transparent;color:#e8eaed;
+  display:flex;align-items:center;justify-content:center;margin:0 4px 4px;flex-shrink:0;
+}
+.b-newtab:hover{background:rgba(255,255,255,.1)}
+.b-newtab svg{width:14px;height:14px}
+
+.browser-bar{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 8px;background:#292a2d;border-bottom:1px solid #35363a;
+  flex-shrink:0;
+}
+.b-nav{
+  width:30px;height:30px;border-radius:50%;border:none;background:transparent;color:#e8eaed;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.b-nav:hover:not(:disabled){background:rgba(255,255,255,.1)}
+.b-nav:disabled{opacity:.35;cursor:default}
+.b-nav svg{width:16px;height:16px}
+.b-addr{
+  flex:1;display:flex;align-items:center;gap:6px;
+  background:#202124;border:1px solid #3c4043;border-radius:999px;
+  padding:0 12px;height:32px;min-width:0;
+}
+.b-addr:focus-within{border-color:#8ab4f8;background:#292a2d}
+.b-addr svg{width:14px;height:14px;color:#9aa0a6;flex-shrink:0}
+.b-addr input{
+  flex:1;border:none;background:transparent;color:#e8eaed;
+  font:13px/1.3 var(--font);outline:none;min-width:0;
+}
+
+/* содержимое: iframe + заглушка */
+.b-stage{
+  flex:1;position:relative;background:#202124;overflow:hidden;
+}
+.b-frame{
+  position:absolute;inset:0;width:100%;height:100%;border:none;background:#fff;
+  display:none;
+}
+.b-frame.active{display:block}
+.b-block{
+  position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+  background:#202124;color:#e8eaed;text-align:center;padding:32px;
+}
+.b-block.show{display:flex}
+.b-block .card{
+  max-width:460px;background:#292a2d;border:1px solid #3c4043;border-radius:12px;padding:24px;
+}
+.b-block h3{margin:0 0 8px;font-size:16px}
+.b-block p{margin:0 0 16px;color:#9aa0a6;font-size:13.5px;line-height:1.5}
+.b-block .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.b-block button, .b-block a.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 14px;border-radius:8px;border:1px solid #5f6368;
+  background:#3c4043;color:#e8eaed;font-size:13px;text-decoration:none;
+}
+.b-block button:hover, .b-block a.btn:hover{background:#4a4d52}
+.b-block a.primary{background:#8ab4f8;border-color:#8ab4f8;color:#202124}
+.b-block a.primary:hover{background:#aecbfa}
+.b-loading{
+  position:absolute;top:0;left:0;right:0;height:2px;background:transparent;overflow:hidden;z-index:2;display:none;
+}
+.b-loading.show{display:block}
+.b-loading::before{
+  content:"";position:absolute;top:0;left:-40%;width:40%;height:100%;
+  background:linear-gradient(90deg,transparent,#8ab4f8,transparent);
+  animation:bload 1s linear infinite;
+}
+@keyframes bload{to{left:100%}}
+
+/* =========================================================
+   GAME STORE
+   ========================================================= */
+.store{
+  min-height:100%;background:#0f1620;color:#dfe7ee;
+  display:flex;flex-direction:column;
+}
+.store-top{
+  display:flex;align-items:center;gap:12px;
+  padding:16px 20px;border-bottom:1px solid #2a3644;
+  background:#111a24;flex-shrink:0;
+}
+.store-top .logo{
+  width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#2ea44f,#1a7f37);
+  display:flex;align-items:center;justify-content:center;color:#fff;
+}
+.store-top .logo svg{width:20px;height:20px}
+.store-top h2{margin:0;font-size:16px;font-weight:600}
+.store-top .spacer{flex:1}
+.store-top .pill{
+  padding:6px 10px;border-radius:999px;border:1px solid #3a4a5c;background:#1b2733;
+  font-size:12px;color:#9fb0c1;
+}
+.store-body{
+  padding:24px 20px 40px;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:16px;
+}
+.game-card{
+  background:#16202b;border:1px solid #2a3644;border-radius:12px;overflow:hidden;
+  display:flex;flex-direction:column;transition:transform .2s, border-color .2s;
+}
+.game-card:hover{transform:translateY(-3px);border-color:#4a9eff}
+.game-cover{
+  height:120px;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:34px;font-weight:800;letter-spacing:-.02em;
+  position:relative;
+}
+.game-cover .badge{
+  position:absolute;top:10px;right:10px;
+  padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.45);
+  font-size:11px;font-weight:600;letter-spacing:.04em;
+}
+.game-body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:8px;flex:1}
+.game-title{font-size:15px;font-weight:600;margin:0}
+.game-meta{font-size:12px;color:#9fb0c1;display:flex;gap:10px;flex-wrap:wrap}
+.game-desc{font-size:13px;color:#c4cfd9;line-height:1.45;margin:0}
+.game-actions{margin-top:auto;display:flex;gap:8px;flex-wrap:wrap}
+.g-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  min-height:34px;padding:6px 12px;border-radius:8px;
+  border:1px solid #3a4a5c;background:#1b2733;color:#dfe7ee;
+  font-size:13px;font-weight:600;cursor:pointer;
+}
+.g-btn:hover{border-color:#4a9eff;color:#8ab4f8}
+.g-btn.primary{background:#2ea44f;border-color:#2ea44f;color:#fff}
+.g-btn.primary:hover{background:#3bb85c;border-color:#3bb85c}
+.g-btn.installed{background:#1b2733;border-color:#3a4a5c;color:#9fb0c1}
+.g-btn.danger{background:#7a1f1f;border-color:#a33;color:#fff}
+.g-btn:disabled{opacity:.6;cursor:default}
+
+/* прогресс установки */
+.g-progress{height:6px;border-radius:999px;background:#1b2733;overflow:hidden;margin-top:6px}
+.g-progress span{display:block;height:100%;width:0;background:#2ea44f;transition:width .2s linear}
+
+/* =========================================================
+   GEOMETRY DASH (мини-игра)
+   ========================================================= */
+.gd{
+  position:absolute;inset:0;display:flex;flex-direction:column;background:#000;
+}
+.gd-canvas-wrap{
+  flex:1;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;
+  background:#1a1a2e;
+}
+.gd canvas{
+  display:block;width:100%;height:100%;image-rendering:pixelated;
+}
+.gd-hud{
+  position:absolute;top:10px;left:12px;right:12px;
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  color:#fff;font:600 14px/1.2 var(--font);
+  text-shadow:0 1px 3px rgba(0,0,0,.8);
+  pointer-events:none;
+}
+.gd-hud .left{display:flex;gap:14px;align-items:center}
+.gd-hud .right{display:flex;gap:8px;align-items:center;pointer-events:auto}
+.gd-hud .score{font-size:18px;font-weight:800}
+.gd-hud .best{font-size:12px;color:#9fe6a0}
+.gd-btn{
+  pointer-events:auto;
+  padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.3);
+  background:rgba(0,0,0,.4);color:#fff;font:600 12px/1 var(--font);cursor:pointer;
+}
+.gd-btn:hover{background:rgba(0,0,0,.6)}
+.gd-overlay{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.55);color:#fff;text-align:center;padding:24px;z-index:2;
+}
+.gd-overlay.hidden{display:none}
+.gd-overlay .panel{
+  background:#141c26;border:1px solid #3a4a5c;border-radius:14px;
+  padding:24px;max-width:360px;box-shadow:0 30px 60px -20px rgba(0,0,0,.9);
+}
+.gd-overlay h2{margin:0 0 8px;font-size:20px}
+.gd-overlay p{margin:0 0 16px;color:#9fb0c1;font-size:13.5px;line-height:1.5}
+.gd-overlay .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.gd-overlay button{
+  padding:10px 16px;border-radius:10px;border:1px solid #3a4a5c;background:#1b2733;color:#dfe7ee;
+  font:600 14px/1 var(--font);cursor:pointer;
+}
+.gd-overlay button:hover{border-color:#4a9eff;color:#8ab4f8}
+.gd-overlay button.primary{background:#2ea44f;border-color:#2ea44f;color:#fff}
+.gd-overlay button.primary:hover{background:#3bb85c}
+
+/* =========================================================
+   IFRAME page fallback / misc
+   ========================================================= */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.hidden{display:none !important}
+
+@media(max-width:720px){
+  .desk-icons{grid-template-columns:repeat(auto-fill, 84px)}
+  .desk-icon{width:84px}
+  .tb-btn span{display:none}
+  #start-menu{width:calc(100vw - 16px)}
+  .window{top:20px;left:8px;width:calc(100vw - 16px);height:calc(100vh - 100px)}
+  .window.maximized{height:calc(100vh - 48px) !important}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ LOCK SCREEN ============ -->
+<div id="lock-screen" aria-label="Экран входа">
+  <div class="lock-card" id="lock-card">
+    <div class="lock-avatar" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>
+      </svg>
+    </div>
+    <h1 class="lock-title">Авторизация</h1>
+    <p class="lock-sub">Введите имя пользователя и пароль</p>
+
+    <form id="lock-form" novalidate>
+      <div class="lock-field" id="field-user">
+        <label for="lock-user">Имя пользователя</label>
+        <div class="lock-input-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>
+          </svg>
+          <input id="lock-user" name="user" type="text" placeholder="notkovvik" autocomplete="username" autocapitalize="off" spellcheck="false">
+        </div>
+      </div>
+
+      <div class="lock-field" id="field-pass">
+        <label for="lock-pass">Пароль</label>
+        <div class="lock-input-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="4" y="10" width="16" height="10" rx="2"/>
+            <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+          </svg>
+          <input id="lock-pass" name="pass" type="password" placeholder="Введите пароль" autocomplete="current-password">
+        </div>
+      </div>
+
+      <div class="lock-error" id="lock-error" role="alert" aria-live="polite"></div>
+
+      <button class="lock-btn" type="submit" id="lock-submit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:18px;height:18px">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+          <path d="M10 17l5-5-5-5"/>
+          <path d="M15 12H3"/>
+        </svg>
+        <span>Войти</span>
+      </button>
+
+      <p class="lock-hint">Доступ только для владельца профиля</p>
+    </form>
+  </div>
+
+  <div class="welcome" id="welcome" aria-hidden="true">
+    <div class="welcome-inner">
+      <div class="welcome-avatar" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="8" r="4"/>
+          <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>
+        </svg>
+      </div>
+      <div class="welcome-text">
+        <span class="welcome-hello">Добро пожаловать</span>
+        <span class="welcome-name" id="welcome-name">notkovvik</span>
+        <span class="welcome-status">
+          <span id="welcome-status-text">Вход в систему</span>
+          <span class="dots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+        </span>
+      </div>
+    </div>
+    <div class="welcome-progress" aria-hidden="true"><span></span></div>
+  </div>
+</div>
+
+<!-- ============ DESKTOP ============ -->
+<div id="page-shell" aria-hidden="true">
+  <div id="desktop">
+    <div class="desk-icons" id="desk-icons">
+      <div class="desk-icon" data-action="landing" tabindex="0">
+        <div class="ico blue" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="16" rx="2"/>
+            <path d="M3 9h18"/>
+            <path d="M8 13h8M8 17h5"/>
+          </svg>
+        </div>
+        <div class="lbl">Landing<br>проектов</div>
+      </div>
+
+      <div class="desk-icon" data-action="browser" tabindex="0">
+        <div class="ico" style="background:#4285f4" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/>
+          </svg>
+        </div>
+        <div class="lbl">Браузер</div>
+      </div>
+
+      <div class="desk-icon" data-action="store" tabindex="0">
+        <div class="ico green" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 8h12l-1.5 11.5a2 2 0 0 1-2 1.5h-5a2 2 0 0 1-2-1.5L6 8z"/>
+            <path d="M9 8V6a3 3 0 0 1 6 0v2"/>
+          </svg>
+        </div>
+        <div class="lbl">Game<br>Store</div>
+      </div>
+
+      <div class="desk-icon" data-action="github" tabindex="0">
+        <div class="ico github" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.9 1.2 1.9 1.2 1.1 1.9 2.9 1.3 3.6 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.7-2.8 5.7-5.5 6 .4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3"/></svg>
+        </div>
+        <div class="lbl">GitHub</div>
+      </div>
+
+      <div class="desk-icon" data-action="telegram" tabindex="0">
+        <div class="ico telegram" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+        </div>
+        <div class="lbl">Telegram</div>
+      </div>
+
+      <div class="desk-icon" data-action="computer" tabindex="0">
+        <div class="ico gray" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="12" rx="2"/>
+            <path d="M8 20h8M12 16v4"/>
+          </svg>
+        </div>
+        <div class="lbl">Мой компьютер</div>
+      </div>
+
+      <div class="desk-icon" data-action="trash" tabindex="0">
+        <div class="ico gray" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18"/>
+            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            <path d="M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14"/>
+            <path d="M10 11v6M14 11v6"/>
+          </svg>
+        </div>
+        <div class="lbl">Корзина</div>
+      </div>
+
+      <div class="desk-icon" data-action="settings" tabindex="0">
+        <div class="ico orange" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>
+          </svg>
+        </div>
+        <div class="lbl">Настройки</div>
+      </div>
+    </div>
+  </div>
+
+  <nav id="taskbar" aria-label="Панель задач">
+    <button class="tb-btn" id="btn-start" type="button" title="Пуск">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <rect x="3" y="3" width="8" height="8" rx="1"/>
+        <rect x="13" y="3" width="8" height="8" rx="1"/>
+        <rect x="3" y="13" width="8" height="8" rx="1"/>
+        <rect x="13" y="13" width="8" height="8" rx="1"/>
+      </svg>
+    </button>
+    <button class="tb-btn" data-action="landing" type="button" title="Landing проектов">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="4" width="18" height="16" rx="2"/>
+        <path d="M3 9h18"/>
+        <path d="M8 13h8M8 17h5"/>
+      </svg>
+      <span>Проекты</span>
+    </button>
+    <button class="tb-btn" data-action="browser" type="button" title="Браузер">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/>
+      </svg>
+      <span>Браузер</span>
+    </button>
+    <button class="tb-btn" data-action="store" type="button" title="Game Store">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 8h12l-1.5 11.5a2 2 0 0 1-2 1.5h-5a2 2 0 0 1-2-1.5L6 8z"/>
+        <path d="M9 8V6a3 3 0 0 1 6 0v2"/>
+      </svg>
+      <span>Store</span>
+    </button>
+    <div class="tb-sep" aria-hidden="true"></div>
+    <div class="tb-spacer"></div>
+    <div class="tb-clock" aria-hidden="true">
+      <strong id="clock-time">--:--</strong>
+      <span id="clock-date">--.--.----</span>
+    </div>
+    <div class="tb-sep" aria-hidden="true"></div>
+    <button class="tb-user" type="button" id="btn-lock" title="Заблокировать">
+      <span class="ava" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="8" r="4"/>
+          <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>
+        </svg>
+      </span>
+      <span>notkovvik</span>
+    </button>
+  </nav>
+
+  <div id="start-menu" role="menu" aria-label="Пуск">
+    <h3>Закреплено</h3>
+    <div class="tiles">
+      <button class="tile" data-action="landing" type="button">
+        <span class="tico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 13h8M8 17h5"/></svg></span>
+        <span>Landing проектов</span>
+      </button>
+      <button class="tile" data-action="browser" type="button">
+        <span class="tico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg></span>
+        <span>Браузер</span>
+      </button>
+      <button class="tile" data-action="store" type="button">
+        <span class="tico green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1.5 11.5a2 2 0 0 1-2 1.5h-5a2 2 0 0 1-2-1.5L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></span>
+        <span>Game Store</span>
+      </button>
+      <button class="tile" data-action="github" type="button">
+        <span class="tico github"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.9 1.2 1.9 1.2 1.1 1.9 2.9 1.3 3.6 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.7-2.8 5.7-5.5 6 .4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3"/></svg></span>
+        <span>GitHub</span>
+      </button>
+      <button class="tile" data-action="telegram" type="button">
+        <span class="tico telegram"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg></span>
+        <span>Telegram</span>
+      </button>
+      <button class="tile" data-action="settings" type="button">
+        <span class="tico orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span>
+        <span>Настройки</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="context-menu" role="menu">
+    <button data-ctx="refresh" type="button">Обновить</button>
+    <hr>
+    <button data-ctx="wallpaper" type="button">Сменить обои</button>
+    <button data-ctx="lock" type="button">Заблокировать</button>
+  </div>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+</div>
+
+<script>
+'use strict';
+
+/* =========================================================
+   AUTH
+   ========================================================= */
+const AUTH_USER = 'notkovvik';
+const AUTH_PASS = 'Kovi335497';
+const AUTH_SESSION_KEY = 'nk-auth-ok';
+const WELCOME_DURATION = 8000;
+
+const lockScreen = document.getElementById('lock-screen');
+const lockCard   = document.getElementById('lock-card');
+const lockForm   = document.getElementById('lock-form');
+const lockUser   = document.getElementById('lock-user');
+const lockPass   = document.getElementById('lock-pass');
+const lockError  = document.getElementById('lock-error');
+const lockSubmit = document.getElementById('lock-submit');
+const fieldUser  = document.getElementById('field-user');
+const fieldPass  = document.getElementById('field-pass');
+const welcome    = document.getElementById('welcome');
+const welcomeName= document.getElementById('welcome-name');
+const welcomeStat= document.getElementById('welcome-status-text');
+const pageShell  = document.getElementById('page-shell');
+
+const html = document.documentElement;
+
+function setLocked(locked){
+  html.classList.toggle('locked', locked);
+  pageShell.setAttribute('aria-hidden', locked ? 'true' : 'false');
+  if(locked){
+    lockScreen.classList.remove('fade-out');
+    lockScreen.style.display = '';
+    welcome.classList.remove('show');
+    lockCard.style.display = '';
+    lockCard.classList.remove('shake');
+  }
+}
+function showError(msg){
+  lockError.textContent = msg;
+  lockError.classList.add('show');
+  fieldUser.classList.add('invalid');
+  fieldPass.classList.add('invalid');
+  lockCard.classList.remove('shake');
+  void lockCard.offsetWidth;
+  lockCard.classList.add('shake');
+}
+function clearError(){
+  lockError.textContent = '';
+  lockError.classList.remove('show');
+  fieldUser.classList.remove('invalid');
+  fieldPass.classList.remove('invalid');
+}
+function unlockPage(){
+  lockCard.style.display = 'none';
+  welcome.classList.add('show');
+  welcome.setAttribute('aria-hidden', 'false');
+  welcomeName.textContent = AUTH_USER;
+  welcomeStat.textContent = 'Вход в систему';
+  setTimeout(() => { welcomeStat.textContent = 'Почти готово'; }, Math.max(0, WELCOME_DURATION - 1200));
+  setTimeout(() => { welcomeStat.textContent = 'Добро пожаловать'; }, Math.max(0, WELCOME_DURATION - 400));
+  setTimeout(() => {
+    lockScreen.classList.add('fade-out');
+    setLocked(false);
+    try{ sessionStorage.setItem(AUTH_SESSION_KEY, '1'); }catch{}
+    setTimeout(()=>{ lockScreen.style.display = 'none'; }, 650);
+  }, WELCOME_DURATION);
+}
+lockForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  clearError();
+  const user = lockUser.value.trim();
+  const pass = lockPass.value;
+  if(!user){ showError('Введите имя пользователя.'); lockUser.focus(); return; }
+  if(!pass){ showError('Введите пароль.'); lockPass.focus(); return; }
+  lockSubmit.disabled = true;
+  const btnText = lockSubmit.querySelector('span');
+  const original = btnText.textContent;
+  btnText.textContent = 'Проверка…';
+  setTimeout(() => {
+    const ok = (user.toLowerCase() === AUTH_USER.toLowerCase()) && (pass === AUTH_PASS);
+    if(ok){
+      btnText.textContent = 'Успешно';
+      lockUser.value = ''; lockPass.value = '';
+      unlockPage();
+    }else{
+      lockSubmit.disabled = false;
+      btnText.textContent = original;
+      showError('Неверное имя пользователя или пароль.');
+      lockPass.value = ''; lockPass.focus();
+    }
+  }, 500);
+});
+[lockUser, lockPass].forEach(inp => inp.addEventListener('input', () => {
+  if(lockError.classList.contains('show')) clearError();
+}));
+window.addEventListener('load', () => setTimeout(() => {
+  if(html.classList.contains('locked')) lockUser.focus();
+}, 300));
+
+let alreadyAuthed = false;
+try{ alreadyAuthed = sessionStorage.getItem(AUTH_SESSION_KEY) === '1'; }catch{}
+if(alreadyAuthed){
+  setLocked(false);
+  lockScreen.style.display = 'none';
+}else{
+  setLocked(true);
+}
+
+/* =========================================================
+   ОБЩЕЕ: тост, действия рабочего стола
+   ========================================================= */
+const LANDING_URL = 'landing.html';
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t=setTimeout(()=>t.classList.remove('show'),2000);
+}
+function openLanding(){
+  window.open(LANDING_URL, '_blank', 'noopener');
+  toast('Открываю landing.html');
+}
+function openExternal(url){
+  window.open(url, '_blank', 'noopener');
+  toast('Открываю ' + url);
+}
+function doAction(action){
+  switch(action){
+    case 'landing': openLanding(); break;
+    case 'browser': openBrowser(); break;
+    case 'store': openStore(); break;
+    case 'github': openExternal('https://github.com/notkovvik'); break;
+    case 'telegram': openExternal('https://t.me/notkovvik'); break;
+    case 'computer': toast('Мой компьютер: рабочая станция notkovvik'); break;
+    case 'trash': toast('Корзина пуста'); break;
+    case 'settings': cycleWallpaper(); toast('Обои изменены'); break;
+    default: break;
+  }
+}
+document.addEventListener('click',(e)=>{
+  const target=e.target.closest('[data-action]');
+  if(!target) return;
+  doAction(target.dataset.action);
+});
+document.getElementById('desk-icons').addEventListener('dblclick',(e)=>{
+  const icon=e.target.closest('.desk-icon');
+  if(!icon) return;
+  doAction(icon.dataset.action);
+});
+document.getElementById('desk-icons').addEventListener('click',(e)=>{
+  document.querySelectorAll('.desk-icon.selected').forEach(el=>el.classList.remove('selected'));
+  const icon=e.target.closest('.desk-icon');
+  if(icon) icon.classList.add('selected');
+});
+document.getElementById('desktop').addEventListener('click',(e)=>{
+  if(e.target.id==='desktop'){
+    document.querySelectorAll('.desk-icon.selected').forEach(el=>el.classList.remove('selected'));
+  }
+});
+document.getElementById('desk-icons').addEventListener('keydown',(e)=>{
+  if(e.key==='Enter' || e.key===' '){
+    const icon=e.target.closest('.desk-icon');
+    if(icon){ e.preventDefault(); doAction(icon.dataset.action); }
+  }
+});
+
+/* ПУСК */
+const btnStart=document.getElementById('btn-start');
+const startMenu=document.getElementById('start-menu');
+btnStart.addEventListener('click',(e)=>{ e.stopPropagation(); startMenu.classList.toggle('open'); });
+document.addEventListener('click',(e)=>{
+  if(!startMenu.contains(e.target) && !btnStart.contains(e.target)) startMenu.classList.remove('open');
+});
+
+/* КОНТЕКСТНОЕ МЕНЮ */
+const ctx=document.getElementById('context-menu');
+document.getElementById('desktop').addEventListener('contextmenu',(e)=>{
+  e.preventDefault();
+  const x=Math.min(e.clientX, window.innerWidth-220);
+  const y=Math.min(e.clientY, window.innerHeight-160);
+  ctx.style.left=x+'px';
+  ctx.style.top=y+'px';
+  ctx.classList.add('open');
+});
+document.addEventListener('click',(e)=>{ if(!ctx.contains(e.target)) ctx.classList.remove('open'); });
+ctx.addEventListener('click',(e)=>{
+  const b=e.target.closest('button[data-ctx]');
+  if(!b) return;
+  const act=b.dataset.ctx;
+  ctx.classList.remove('open');
+  if(act==='refresh') toast('Рабочий стол обновлён');
+  if(act==='wallpaper'){ cycleWallpaper(); toast('Обои изменены'); }
+  if(act==='lock'){ lockNow(); }
+});
+
+/* ОБОИ */
+function cycleWallpaper(){
+  const d=document.getElementById('desktop');
+  const cur=(d.dataset.wp||'0');
+  const next=String((parseInt(cur,10)+1)%3);
+  d.dataset.wp=next;
+  d.style.filter = next==='0' ? 'none' : next==='1' ? 'hue-rotate(-25deg)' : 'hue-rotate(25deg)';
+  try{ localStorage.setItem('nk-wallpaper', next); }catch{}
+}
+try{
+  const saved=localStorage.getItem('nk-wallpaper');
+  if(saved && saved!=='0'){
+    const d=document.getElementById('desktop');
+    d.dataset.wp=saved;
+    d.style.filter = saved==='1' ? 'hue-rotate(-25deg)' : 'hue-rotate(25deg)';
+  }
+}catch{}
+
+/* ЧАСЫ */
+const clockTime=document.getElementById('clock-time');
+const clockDate=document.getElementById('clock-date');
+function tick(){
+  const d=new Date();
+  clockTime.textContent=d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+  clockDate.textContent=d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'});
+}
+tick(); setInterval(tick, 15000);
+
+/* БЛОКИРОВКА */
+function lockNow(){
+  setLocked(true);
+  try{ sessionStorage.removeItem(AUTH_SESSION_KEY); }catch{}
+}
+document.getElementById('btn-lock').addEventListener('click', lockNow);
+
+/* =========================================================
+   ОКОННЫЙ МЕНЕДЖЕР
+   ========================================================= */
+let zTop = 20;
+const openWindows = new Map(); // id -> {el, kind, ...}
+
+function createWindow({id, title, iconColor='#3a6fd8', iconSvg='', width, height, body}){
+  if(openWindows.has(id)){
+    const w = openWindows.get(id);
+    focusWindow(w.el);
+    w.el.classList.remove('minimized');
+    return w;
+  }
+  const el = document.createElement('div');
+  el.className = 'window';
+  el.dataset.winId = id;
+  if(width) el.style.width = width;
+  if(height) el.style.height = height;
+
+  el.innerHTML = `
+    <div class="win-title">
+      <div class="win-ico" style="background:${iconColor}">${iconSvg}</div>
+      <div class="win-name">${title}</div>
+      <div class="win-controls">
+        <button class="win-ctrl" data-win-act="min" title="Свернуть">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg>
+        </button>
+        <button class="win-ctrl" data-win-act="max" title="Развернуть">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="1"/></svg>
+        </button>
+        <button class="win-ctrl close" data-win-act="close" title="Закрыть">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="win-body"></div>
+    <div class="win-resize e"></div>
+    <div class="win-resize s"></div>
+    <div class="win-resize se"></div>
+  `;
+  document.getElementById('page-shell').appendChild(el);
+  el.querySelector('.win-body').append(body);
+
+  requestAnimationFrame(()=> el.classList.add('show'));
+  focusWindow(el);
+
+  const w = { el, kind: id };
+  openWindows.set(id, w);
+
+  el.addEventListener('mousedown', ()=> focusWindow(el));
+
+  el.querySelectorAll('[data-win-act]').forEach(b=>{
+    b.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const act = b.dataset.winAct;
+      if(act==='close') closeWindow(el);
+      if(act==='min') { el.classList.add('minimized'); }
+      if(act==='max') { el.classList.toggle('maximized'); }
+    });
+  });
+  el.querySelector('.win-title').addEventListener('dblclick', ()=> el.classList.toggle('maximized'));
+
+  makeDraggable(el);
+  makeResizable(el);
+
+  return w;
+}
+function focusWindow(el){
+  zTop++;
+  el.style.zIndex = zTop;
+  document.querySelectorAll('.window').forEach(w=>w.classList.remove('active'));
+  el.classList.add('active');
+  el.classList.remove('minimized');
+}
+function closeWindow(el){
+  el.classList.remove('show');
+  const id = el.dataset.winId;
+  setTimeout(()=>{
+    el.remove();
+    if(id && openWindows.has(id)){
+      const w = openWindows.get(id);
+      if(w.destroy) w.destroy();
+      openWindows.delete(id);
+    }
+  }, 160);
+}
+
+/* перетаскивание */
+function makeDraggable(el){
+  const handle = el.querySelector('.win-title');
+  let dragging=false, sx=0, sy=0, ox=0, oy=0;
+  handle.addEventListener('mousedown',(e)=>{
+    if(e.target.closest('.win-controls')) return;
+    if(el.classList.contains('maximized')) return;
+    dragging=true;
+    sx=e.clientX; sy=e.clientY;
+    const r = el.getBoundingClientRect();
+    const pr = document.getElementById('page-shell').getBoundingClientRect();
+    ox = r.left - pr.left;
+    oy = r.top - pr.top;
+    document.body.style.userSelect='none';
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove',(e)=>{
+    if(!dragging) return;
+    const dx = e.clientX - sx;
+    const dy = e.clientY - sy;
+    el.style.left = Math.max(0, ox + dx) + 'px';
+    el.style.top  = Math.max(0, oy + dy) + 'px';
+  });
+  window.addEventListener('mouseup',()=>{
+    if(!dragging) return;
+    dragging=false;
+    document.body.style.userSelect='';
+  });
+}
+
+/* ресайз */
+function makeResizable(el){
+  el.querySelectorAll('.win-resize').forEach(h=>{
+    h.addEventListener('mousedown',(e)=>{
+      if(el.classList.contains('maximized')) return;
+      e.preventDefault(); e.stopPropagation();
+      const dir = h.classList.contains('e') ? 'e' : h.classList.contains('s') ? 's' : 'se';
+      const sx=e.clientX, sy=e.clientY;
+      const r=el.getBoundingClientRect();
+      const w0=r.width, h0=r.height;
+      function move(ev){
+        const dx=ev.clientX-sx, dy=ev.clientY-sy;
+        if(dir==='e'||dir==='se') el.style.width  = Math.max(320, w0+dx)+'px';
+        if(dir==='s'||dir==='se') el.style.height = Math.max(220, h0+dy)+'px';
+      }
+      function up(){
+        window.removeEventListener('mousemove',move);
+        window.removeEventListener('mouseup',up);
+      }
+      window.addEventListener('mousemove',move);
+      window.addEventListener('mouseup',up);
+    });
+  });
+}
+
+/* =========================================================
+   БРАУЗЕР
+   ========================================================= */
+const HOME_URL = 'https://www.google.com/';
+const SEARCH_URL = 'https://duckduckgo.com/?q=';
+
+let browserWin = null;
+let browserState = null;
+
+function openBrowser(){
+  if(openWindows.has('browser')){
+    const w = openWindows.get('browser');
+    focusWindow(w.el);
+    w.el.classList.remove('minimized');
+    return;
+  }
+  const body = document.createElement('div');
+  body.className = 'browser';
+  body.innerHTML = `
+    <div class="browser-tabs" id="b-tabs"></div>
+    <div class="browser-bar">
+      <button class="b-nav" id="b-back" title="Назад" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <button class="b-nav" id="b-fwd" title="Вперёд" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+      <button class="b-nav" id="b-reload" title="Обновить">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+      </button>
+      <button class="b-nav" id="b-home" title="Домой">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+      </button>
+      <div class="b-addr">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="b-url" type="text" placeholder="Введите адрес или поисковый запрос" spellcheck="false" autocomplete="off">
+      </div>
+      <button class="b-nav" id="b-download" title="Скачать страницу">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+      </button>
+    </div>
+    <div class="b-stage">
+      <div class="b-loading" id="b-loading"></div>
+    </div>
+  `;
+  const w = createWindow({
+    id: 'browser',
+    title: 'Браузер',
+    iconColor: '#4285f4',
+    iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>',
+    body
+  });
+
+  const tabsEl = body.querySelector('#b-tabs');
+  const stage  = body.querySelector('.b-stage');
+  const loading= body.querySelector('#b-loading');
+  const urlInp = body.querySelector('#b-url');
+  const btnBack= body.querySelector('#b-back');
+  const btnFwd = body.querySelector('#b-fwd');
+  const btnReload = body.querySelector('#b-reload');
+  const btnHome = body.querySelector('#b-home');
+  const btnDownload = body.querySelector('#b-download');
+
+  browserState = {
+    tabs: [],
+    activeId: null,
+    nextId: 1,
+    stage, tabsEl, loading, urlInp, btnBack, btnFwd
+  };
+
+  function newTab(url=HOME_URL){
+    const id = browserState.nextId++;
+    const tab = { id, title: 'Новая вкладка', url, history: [], histIndex: -1, iframe:null, blockEl:null };
+    browserState.tabs.push(tab);
+    renderTabs();
+    activateTab(id);
+    navigate(tab, url, true);
+    return tab;
+  }
+  function getActive(){ return browserState.tabs.find(t=>t.id===browserState.activeId); }
+
+  function renderTabs(){
+    browserState.tabsEl.replaceChildren();
+    browserState.tabs.forEach(t=>{
+      const el = document.createElement('div');
+      el.className='b-tab' + (t.id===browserState.activeId?' active':'');
+      el.innerHTML = `
+        <span class="b-fav">${(t.title||'?').charAt(0).toUpperCase()}</span>
+        <span class="b-ttl">${t.title||'Новая вкладка'}</span>
+        <button class="b-close" title="Закрыть вкладку">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      `;
+      el.addEventListener('click', (e)=>{
+        if(e.target.closest('.b-close')) return;
+        activateTab(t.id);
+      });
+      el.querySelector('.b-close').addEventListener('click',(e)=>{
+        e.stopPropagation();
+        closeTab(t.id);
+      });
+      browserState.tabsEl.append(el);
+    });
+    const add = document.createElement('button');
+    add.className='b-newtab';
+    add.title='Новая вкладка';
+    add.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+    add.addEventListener('click', ()=> newTab());
+    browserState.tabsEl.append(add);
+  }
+
+  function activateTab(id){
+    browserState.activeId = id;
+    const t = getActive();
+    renderTabs();
+    // показать нужный iframe / заглушку
+    stage.querySelectorAll('.b-frame,.b-block').forEach(el=>{
+      el.classList.remove('active','show');
+    });
+    if(t && t.iframe) t.iframe.classList.add('active');
+    if(t && t.blockEl) t.blockEl.classList.add('show');
+
+    if(t){
+      urlInp.value = t.url;
+      btnBack.disabled = t.histIndex <= 0;
+      btnFwd.disabled = t.histIndex >= t.history.length-1;
+      const titleEl = document.querySelector('[data-win-id="browser"] .win-name');
+      if(titleEl) titleEl.textContent = 'Браузер — ' + (t.title || 'Новая вкладка');
+    }
+  }
+
+  function closeTab(id){
+    const idx = browserState.tabs.findIndex(t=>t.id===id);
+    if(idx===-1) return;
+    const t = browserState.tabs[idx];
+    if(t.iframe) t.iframe.remove();
+    if(t.blockEl) t.blockEl.remove();
+    browserState.tabs.splice(idx,1);
+    if(browserState.tabs.length===0){ newTab(); return; }
+    if(browserState.activeId===id){
+      activateTab(browserState.tabs[Math.max(0,idx-1)].id);
+    } else {
+      renderTabs();
+    }
+  }
+
+  function normalizeUrl(input){
+    const s = String(input).trim();
+    if(!s) return HOME_URL;
+    if(/^https?:\/\//i.test(s)) return s;
+    if(/^[\w.-]+\.[a-z]{2,}(\/.*)?$/i.test(s)) return 'https://' + s;
+    // похоже на поисковый запрос
+    return SEARCH_URL + encodeURIComponent(s);
+  }
+
+  function navigate(tab, input, pushHistory=false){
+    const url = normalizeUrl(input);
+    tab.url = url;
+    tab.title = prettyTitle(url);
+
+    if(pushHistory){
+      tab.history = tab.history.slice(0, tab.histIndex+1);
+      tab.history.push(url);
+      tab.histIndex = tab.history.length-1;
+    }
+
+    showLoading(true);
+    stage.querySelectorAll('.b-frame,.b-block').forEach(el=>el.classList.remove('active','show'));
+    if(tab.iframe){ tab.iframe.remove(); tab.iframe = null; }
+    if(tab.blockEl){ tab.blockEl.remove(); tab.blockEl = null; }
+
+    // Известные «запрещённые» сайты — сразу заглушка (чтобы не было пустого iframe)
+    if(isBlockedSite(url)){
+      tab.blockEl = buildBlock(tab, url);
+      stage.append(tab.blockEl);
+      tab.blockEl.classList.add('show');
+      showLoading(false);
+      tab.title = prettyTitle(url);
+      activateTab(tab.id);
+      return;
+    }
+
+    const frame = document.createElement('iframe');
+    frame.className = 'b-frame';
+    frame.setAttribute('referrerpolicy','no-referrer');
+    frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox');
+    frame.src = url;
+    let loaded = false;
+    const onLoad = ()=>{
+      loaded = true;
+      showLoading(false);
+      try{
+        const loc = frame.contentWindow.location.href;
+        if(loc && loc !== 'about:blank') tab.url = loc;
+      }catch{}
+      activateTab(tab.id);
+    };
+    frame.addEventListener('load', onLoad);
+    // если долго не грузится — показать заглушку
+    setTimeout(()=>{
+      if(loaded) return;
+      try{
+        // на всякий случай
+        if(frame.contentWindow && frame.contentWindow.length >= 0){ /* ничего */ }
+      }catch{
+        // недоступно — значит, скорее всего, заблокировано
+        if(!loaded){
+          frame.remove();
+          tab.iframe = null;
+          tab.blockEl = buildBlock(tab, url);
+          stage.append(tab.blockEl);
+          tab.blockEl.classList.add('show');
+          showLoading(false);
+          activateTab(tab.id);
+        }
+      }
+    }, 3500);
+
+    tab.iframe = frame;
+    stage.append(frame);
+    frame.classList.add('active');
+    activateTab(tab.id);
+  }
+
+  function prettyTitle(url){
+    try{
+      const u = new URL(url);
+      return u.hostname.replace(/^www\./,'');
+    }catch{ return 'Новая вкладка'; }
+  }
+  function isBlockedSite(url){
+    try{
+      const host = new URL(url).hostname.replace(/^www\./,'');
+      const blocked = [
+        'google.com','youtube.com','youtu.be','facebook.com','instagram.com',
+        'twitter.com','x.com','vk.com','ok.ru','github.com','t.me',
+        'mail.google.com','gmail.com','steamcommunity.com','store.steampowered.com'
+      ];
+      return blocked.some(b=> host===b || host.endsWith('.'+b));
+    }catch{ return false; }
+  }
+  function buildBlock(tab, url){
+    const wrap = document.createElement('div');
+    wrap.className = 'b-block';
+    let host='';
+    try{ host = new URL(url).hostname; }catch{}
+    wrap.innerHTML = `
+      <div class="card">
+        <h3>Сайт не разрешает встраивание</h3>
+        <p><b>${host||url}</b> запрещает показывать себя внутри другого окна (заголовок X-Frame-Options / CSP). Это ограничение сайта, а не браузера.</p>
+        <div class="row">
+          <a class="btn primary" href="${url}" target="_blank" rel="noopener">Открыть в новой вкладке</a>
+          <button data-act="home">На главную</button>
+          <button data-act="download">Скачать</button>
+        </div>
+      </div>
+    `;
+    wrap.querySelector('[data-act="home"]').addEventListener('click', ()=>{
+      navigate(tab, HOME_URL);
+    });
+    wrap.querySelector('[data-act="download"]').addEventListener('click', ()=>{
+      downloadPage(url);
+    });
+    wrap.querySelector('a.btn').addEventListener('click', (e)=>{
+      e.preventDefault();
+      openExternal(url);
+    });
+    return wrap;
+  }
+
+  function showLoading(v){ loading.classList.toggle('show', v); }
+
+  urlInp.addEventListener('keydown', (e)=>{
+    if(e.key==='Enter'){
+      const t = getActive();
+      if(t) navigate(t, urlInp.value, true);
+    }
+  });
+
+  btnBack.addEventListener('click', ()=>{
+    const t = getActive(); if(!t) return;
+    if(t.histIndex > 0){
+      t.histIndex--;
+      navigate(t, t.history[t.histIndex]);
+      btnBack.disabled = t.histIndex <= 0;
+      btnFwd.disabled = false;
+    }
+  });
+  btnFwd.addEventListener('click', ()=>{
+    const t = getActive(); if(!t) return;
+    if(t.histIndex < t.history.length-1){
+      t.histIndex++;
+      navigate(t, t.history[t.histIndex]);
+      btnFwd.disabled = t.histIndex >= t.history.length-1;
+      btnBack.disabled = false;
+    }
+  });
+  btnReload.addEventListener('click', ()=>{
+    const t = getActive(); if(!t) return;
+    navigate(t, t.url);
+  });
+  btnHome.addEventListener('click', ()=>{
+    const t = getActive(); if(!t) return;
+    navigate(t, HOME_URL, true);
+  });
+  btnDownload.addEventListener('click', ()=>{
+    const t = getActive(); if(!t) return;
+    downloadPage(t.url);
+  });
+
+  function downloadPage(url){
+    // Скачивание делаем через новую вкладку — так браузер сам решит.
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    // если это файл — браузер скачает; если страница — откроет.
+    a.click();
+    toast('Скачивание/открытие: ' + url);
+  }
+
+  // первая вкладка
+  newTab(HOME_URL);
+
+  browserWin = w;
+}
+
+/* =========================================================
+   GAME STORE + мини-игра Geometry Dash
+   ========================================================= */
+const GAMES = [
+  {
+    id: 'geometry-dash',
+    title: 'Geometry Dash',
+    genre: 'Платформер / Ритм',
+    size: '68 МБ',
+    color: '#2ea44f',
+    letter: 'GD',
+    desc: 'Прыгай через шипы, набирай очки. Управление: пробел / клик по сцене. Реальная мини-игра.',
+    playable: true
+  },
+  {
+    id: 'portal-2',
+    title: 'Portal 2',
+    genre: 'Головоломка',
+    size: '12 ГБ',
+    color: '#4a9eff',
+    letter: 'P2',
+    desc: 'Классика Valve. В демо недоступно: только витрина.'
+  },
+  {
+    id: 'cs2',
+    title: 'Counter-Strike 2',
+    genre: 'Шутер',
+    size: '28 ГБ',
+    color: '#d88a3a',
+    letter: 'CS',
+    desc: 'Тактический шутер. В демо недоступно: только витрина.'
+  },
+  {
+    id: 'terraria',
+    title: 'Terraria',
+    genre: 'Песочница',
+    size: '400 МБ',
+    color: '#8b6cff',
+    letter: 'T',
+    desc: '2D-песочница. В демо недоступно: только витрина.'
+  },
+  {
+    id: 'hollow-knight',
+    title: 'Hollow Knight',
+    genre: 'Метроидвания',
+    size: '9 ГБ',
+    color: '#9fb0c1',
+    letter: 'HK',
+    desc: 'Атмосферный платформер. В демо недоступно: только витрина.'
+  },
+  {
+    id: 'among-us',
+    title: 'Among Us',
+    genre: 'Социальная',
+    size: '250 МБ',
+    color: '#c13584',
+    letter: 'AU',
+    desc: 'Найди предателя. В демо недоступно: только витрина.'
+  }
+];
+
+const INSTALL_KEY = 'nk-installed-games';
+function getInstalled(){
+  try{ return JSON.parse(localStorage.getItem(INSTALL_KEY)||'{}'); }
+  catch{ return {}; }
+}
+function setInstalled(obj){
+  try{ localStorage.setItem(INSTALL_KEY, JSON.stringify(obj)); }catch{}
+}
+
+let storeWin = null;
+
+function openStore(){
+  if(openWindows.has('store')){
+    const w = openWindows.get('store');
+    focusWindow(w.el);
+    w.el.classList.remove('minimized');
+    return;
+  }
+  const body = document.createElement('div');
+  body.className = 'store';
+  body.innerHTML = `
+    <div class="store-top">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 8h12l-1.5 11.5a2 2 0 0 1-2 1.5h-5a2 2 0 0 1-2-1.5L6 8z"/>
+          <path d="M9 8V6a3 3 0 0 1 6 0v2"/>
+        </svg>
+      </div>
+      <h2>Game Store</h2>
+      <div class="spacer"></div>
+      <div class="pill">Демо-витрина · реально доступна только Geometry Dash</div>
+    </div>
+    <div class="store-body" id="store-body"></div>
+  `;
+  const w = createWindow({
+    id:'store', title:'Game Store', iconColor:'#2ea44f',
+    iconSvg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1.5 11.5a2 2 0 0 1-2 1.5h-5a2 2 0 0 1-2-1.5L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>',
+    body
+  });
+
+  const grid = body.querySelector('#store-body');
+
+  function renderStore(){
+    grid.replaceChildren();
+    const installed = getInstalled();
+    GAMES.forEach(g=>{
+      const card = document.createElement('article');
+      card.className = 'game-card';
+      card.dataset.gameId = g.id;
+      const isInstalled = !!installed[g.id];
+      card.innerHTML = `
+        <div class="game-cover" style="background:linear-gradient(135deg, ${g.color}, ${shade(g.color)});">
+          <span>${g.letter}</span>
+          ${g.playable ? '<span class="badge" style="background:rgba(46,164,79,.9)">РАБОТАЕТ</span>' : '<span class="badge">ДЕМО</span>'}
+        </div>
+        <div class="game-body">
+          <h3 class="game-title">${g.title}</h3>
+          <div class="game-meta"><span>${g.genre}</span><span>${g.size}</span></div>
+          <p class="game-desc">${g.desc}</p>
+          <div class="game-actions"></div>
+          <div class="g-progress hidden"><span></span></div>
+        </div>
+      `;
+      const actions = card.querySelector('.game-actions');
+      const progress = card.querySelector('.g-progress');
+      const bar = progress.querySelector('span');
+
+      if(g.playable && isInstalled){
+        const play = document.createElement('button');
+        play.className = 'g-btn primary';
+        play.textContent = 'Играть';
+        play.addEventListener('click', ()=> launchGame(g));
+        actions.append(play);
+
+        const del = document.createElement('button');
+        del.className = 'g-btn danger';
+        del.textContent = 'Удалить';
+        del.addEventListener('click', ()=>{
+          const inst = getInstalled();
+          delete inst[g.id];
+          setInstalled(inst);
+          toast('Удалено: ' + g.title);
+          renderStore();
+        });
+        actions.append(del);
+      }else if(g.playable){
+        const install = document.createElement('button');
+        install.className = 'g-btn primary';
+        install.textContent = 'Установить';
+        install.addEventListener('click', ()=> fakeInstall(g, install, progress, bar, true));
+        actions.append(install);
+
+        const details = document.createElement('button');
+        details.className = 'g-btn';
+        details.textContent = 'Подробнее';
+        details.addEventListener('click', ()=> toast(g.title + ' — мини-игра, реально работает.'));
+        actions.append(details);
+      }else{
+        const install = document.createElement('button');
+        install.className = 'g-btn';
+        install.textContent = 'Скачать (демо)';
+        install.addEventListener('click', ()=> fakeInstall(g, install, progress, bar, false));
+        actions.append(install);
+
+        const details = document.createElement('button');
+        details.className = 'g-btn';
+        details.textContent = 'Подробнее';
+        details.addEventListener('click', ()=> toast('В демо-витрине ' + g.title + ' недоступна для запуска.'));
+        actions.append(details);
+      }
+
+      grid.append(card);
+    });
+  }
+
+  function fakeInstall(g, btn, progress, bar, playable){
+    if(btn.disabled) return;
+    btn.disabled = true;
+    progress.classList.remove('hidden');
+    let p = 0;
+    const timer = setInterval(()=>{
+      p += 8 + Math.random()*12;
+      if(p >= 100){
+        p = 100;
+        clearInterval(timer);
+        bar.style.width = '100%';
+        setTimeout(()=>{
+          progress.classList.add('hidden');
+          bar.style.width = '0%';
+          if(playable){
+            const inst = getInstalled();
+            inst[g.id] = true;
+            setInstalled(inst);
+            toast('Установлено: ' + g.title);
+            renderStore();
+          }else{
+            btn.disabled = false;
+            toast(g.title + ': в демо недоступно. Это витрина, игра не скачивается.');
+          }
+        }, 350);
+      }
+      bar.style.width = p + '%';
+    }, 200);
+  }
+
+  function shade(hex){
+    try{
+      const c = hex.replace('#','');
+      const r = parseInt(c.substring(0,2),16);
+      const g = parseInt(c.substring(2,4),16);
+      const b = parseInt(c.substring(4,6),16);
+      const f = 0.55;
+      const R = Math.round(r*f), G = Math.round(g*f), B = Math.round(b*f);
+      return `rgb(${R},${G},${B})`;
+    }catch{ return '#000'; }
+  }
+
+  renderStore();
+  storeWin = w;
+}
+
+/* ---------- Geometry Dash мини-игра ---------- */
+function launchGame(g){
+  const id = 'game-' + g.id;
+  if(openWindows.has(id)){
+    const w = openWindows.get(id);
+    focusWindow(w.el);
+    w.el.classList.remove('minimized');
+    return;
+  }
+  const body = document.createElement('div');
+  body.className = 'gd';
+  body.innerHTML = `
+    <div class="gd-canvas-wrap">
+      <canvas></canvas>
+      <div class="gd-hud">
+        <div class="left">
+          <span class="score" id="gd-score">0</span>
+          <span class="best" id="gd-best">рекорд: 0</span>
+        </div>
+        <div class="right">
+          <button class="gd-btn" id="gd-restart">Заново</button>
+          <button class="gd-btn" id="gd-pause">Пауза</button>
+        </div>
+      </div>
+      <div class="gd-overlay" id="gd-overlay">
+        <div class="panel">
+          <h2>Geometry Dash</h2>
+          <p>Прыгай через шипы. Управление: <b>пробел</b> или <b>клик</b>. Чем дальше — тем быстрее.</p>
+          <div class="row">
+            <button class="primary" id="gd-start">Играть</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  const w = createWindow({
+    id, title: 'Geometry Dash', iconColor:'#2ea44f',
+    iconSvg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1.5 11.5a2 2 0 0 1-2 1.5h-5a2 2 0 0 1-2-1.5L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>',
+    body,
+    width:'min(900px, calc(100vw - 160px))',
+    height:'min(560px, calc(100vh - 160px))'
+  });
+
+  /* логика игры */
+  const canvas = body.querySelector('canvas');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = body.querySelector('#gd-score');
+  const bestEl = body.querySelector('#gd-best');
+  const overlay = body.querySelector('#gd-overlay');
+  const startBtn = body.querySelector('#gd-start');
+  const restartBtn = body.querySelector('#gd-restart');
+  const pauseBtn = body.querySelector('#gd-pause');
+
+  const BEST_KEY = 'nk-gd-best';
+  let best = 0;
+  try{ best = parseInt(localStorage.getItem(BEST_KEY)||'0',10)||0; }catch{}
+  bestEl.textContent = 'рекорд: ' + best;
+
+  let running = false;
+  let paused = false;
+  let raf = 0;
+  let lastTime = 0;
+  let score = 0;
+  let speed = 320;    // px/сек
+  let gravity = 1900;
+  let jumpV = -720;
+  let groundY = 0;
+  let W = 0, H = 0;
+  let player = { x: 80, y: 0, w: 34, h: 34, vy: 0, onGround: true };
+  let obstacles = [];
+  let spawnTimer = 0;
+  let spawnGap = 1.1;
+  let stars = [];
+
+  function resize(){
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    W = Math.max(320, Math.floor(rect.width));
+    H = Math.max(240, Math.floor(rect.height));
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    groundY = H - 60;
+    if(player) player.y = groundY - player.h;
+    stars = Array.from({length: 40}, ()=>({
+      x: Math.random()*W,
+      y: Math.random()*(groundY-40),
+      r: 1+Math.random()*1.6,
+      s: 20+Math.random()*40
+    }));
+  }
+  const ro = new ResizeObserver(()=>{ resize(); });
+  ro.observe(canvas.parentElement);
+  resize();
+
+  function reset(){
+    score = 0;
+    speed = 320;
+    gravity = 1900;
+    jumpV = -720;
+    player.y = groundY - player.h;
+    player.vy = 0;
+    player.onGround = true;
+    obstacles = [];
+    spawnTimer = 0;
+    spawnGap = 1.1;
+    scoreEl.textContent = '0';
+  }
+
+  function start(){
+    reset();
+    overlay.classList.add('hidden');
+    running = true;
+    paused = false;
+    lastTime = performance.now();
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(loop);
+  }
+  function pauseToggle(){
+    if(!running) return;
+    paused = !paused;
+    if(!paused){
+      lastTime = performance.now();
+      raf = requestAnimationFrame(loop);
+    }else{
+      cancelAnimationFrame(raf);
+    }
+  }
+  function gameOver(){
+    running = false;
+    cancelAnimationFrame(raf);
+    if(score > best){
+      best = Math.floor(score);
+      bestEl.textContent = 'рекорд: ' + best;
+      try{ localStorage.setItem(BEST_KEY, String(best)); }catch{}
+    }
+    overlay.querySelector('h2').textContent = 'Игра окончена';
+    overlay.querySelector('p').innerHTML = 'Очки: <b>' + Math.floor(score) + '</b>. Рекорд: <b>' + best + '</b>.<br>Пробел или кнопка — заново.';
+    overlay.classList.remove('hidden');
+    startBtn.textContent = 'Заново';
+  }
+
+  function jump(){
+    if(!running){ start(); return; }
+    if(paused){ pauseToggle(); return; }
+    if(player.onGround){
+      player.vy = jumpV;
+      player.onGround = false;
+    }
+  }
+
+  function spawnObstacle(){
+    const isHigh = Math.random() < 0.35;
+    const w = 22 + Math.random()*10;
+    const h = isHigh ? 70 : 40 + Math.random()*20;
+    obstacles.push({
+      x: W + 40,
+      y: groundY - h,
+      w, h
+    });
+  }
+
+  function loop(t){
+    if(!running) return;
+    if(paused){ return; }
+    const dt = Math.min(0.05, (t - lastTime) / 1000);
+    lastTime = t;
+
+    // скорость растёт со счётом
+    speed = 320 + Math.min(380, score * 6);
+    // гравитация
+    player.vy += gravity * dt;
+    player.y += player.vy * dt;
+    if(player.y + player.h >= groundY){
+      player.y = groundY - player.h;
+      player.vy = 0;
+      player.onGround = true;
+    }
+
+    // спавн препятствий
+    spawnTimer += dt;
+    const gap = Math.max(0.55, spawnGap - score*0.004);
+    if(spawnTimer >= gap){
+      spawnTimer = 0;
+      spawnObstacle();
+    }
+
+    // движение препятствий
+    for(const o of obstacles){ o.x -= speed * dt; }
+    obstacles = obstacles.filter(o => o.x + o.w > -40);
+
+    // столкновения
+    for(const o of obstacles){
+      if(
+        player.x < o.x + o.w &&
+        player.x + player.w > o.x &&
+        player.y < o.y + o.h &&
+        player.y + player.h > o.y
+      ){
+        gameOver();
+        return;
+      }
+    }
+
+    // очки
+    score += dt * 10;
+    scoreEl.textContent = Math.floor(score);
+
+    // звёзды фоном
+    for(const s of stars){
+      s.x -= s.s * dt;
+      if(s.x < 0){ s.x = W; s.y = Math.random()*(groundY-40); }
+    }
+
+    draw();
+    raf = requestAnimationFrame(loop);
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    // небо
+    const g = ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0, '#1a1a3e');
+    g.addColorStop(1, '#0a0a1a');
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,W,H);
+
+    // звёзды
+    ctx.fillStyle = 'rgba(255,255,255,.6)';
+    for(const s of stars){
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    // земля
+    ctx.fillStyle = '#1f6f3a';
+    ctx.fillRect(0, groundY, W, H-groundY);
+    ctx.fillStyle = '#2ea44f';
+    ctx.fillRect(0, groundY, W, 6);
+
+    // препятствия (шипы)
+    for(const o of obstacles){
+      ctx.fillStyle = '#ff4d4d';
+      ctx.beginPath();
+      // рисуем треугольник-шип
+      const cx = o.x + o.w/2;
+      ctx.moveTo(cx, o.y);
+      ctx.lineTo(o.x + o.w, o.y + o.h);
+      ctx.lineTo(o.x, o.y + o.h);
+      ctx.closePath();
+      ctx.fill();
+      // обводка
+      ctx.strokeStyle = 'rgba(0,0,0,.35)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // игрок (куб)
+    ctx.fillStyle = '#ffd93b';
+    ctx.fillRect(player.x, player.y, player.w, player.h);
+    ctx.strokeStyle = 'rgba(0,0,0,.5)';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(player.x, player.y, player.w, player.h);
+    // глаза
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(player.x+8, player.y+10, 5, 5);
+    ctx.fillRect(player.x+20, player.y+10, 5, 5);
+    // рот
+    ctx.fillRect(player.x+10, player.y+22, 14, 3);
+
+    // очки поверх
+    ctx.fillStyle = 'rgba(255,255,255,.85)';
+    ctx.font = '600 14px "Segoe UI", system-ui, sans-serif';
+    ctx.fillText('SCORE ' + Math.floor(score), 14, H - 20);
+  }
+
+  // управление
+  function onKey(e){
+    if(!openWindows.has(id)) return;
+    if(e.code === 'Space' || e.key === ' '){
+      // проверяем, что окно в фокусе
+      const active = document.querySelector('.window.active');
+      if(active && active.dataset.winId === id){
+        e.preventDefault();
+        jump();
+      }
+    }
+  }
+  window.addEventListener('keydown', onKey);
+
+  canvas.addEventListener('mousedown', (e)=>{ e.preventDefault(); jump(); });
+  canvas.addEventListener('touchstart', (e)=>{ e.preventDefault(); jump(); }, {passive:false});
+
+  startBtn.addEventListener('click', start);
+  restartBtn.addEventListener('click', ()=>{ start(); });
+  pauseBtn.addEventListener('click', pauseToggle);
+
+  // при закрытии окна — остановить игру
+  w.destroy = ()=>{
+    running = false;
+    cancelAnimationFrame(raf);
+    window.removeEventListener('keydown', onKey);
+    ro.disconnect();
+  };
+}
+</script>
+</body>
+</html>
